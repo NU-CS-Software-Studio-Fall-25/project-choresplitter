@@ -41,9 +41,9 @@ ActiveRecord::Schema[8.0].define(version: 2025_10_11_075523) do
     t.string "title"
     t.text "description"
     t.integer "member_id", null: false
+    t.integer "task_group_id", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.integer "task_group_id", null: false
     t.index ["member_id"], name: "index_tasks_on_member_id"
     t.index ["task_group_id"], name: "index_tasks_on_task_group_id"
   end
