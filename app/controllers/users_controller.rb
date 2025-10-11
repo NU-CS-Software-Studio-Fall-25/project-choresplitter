@@ -5,7 +5,11 @@ class UsersController < ApplicationController
     @users = User.order(created_at: :desc)
   end
 
-  def show; end
+  def show
+      @chore_groups = @user.chore_groups
+                       .includes(:members, :task_groups)
+                       .order(:name)
+  end
 
   def new
     @user = User.new

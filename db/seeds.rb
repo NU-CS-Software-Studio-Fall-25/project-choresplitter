@@ -6,15 +6,15 @@ User.destroy_all
 
 puts "Seeding data..."
 
-# === Users ===
-users = []
-5.times do |i|
-  users << User.create!(
-    name: "User#{i + 1}",
-    password: "password#{i + 1}"
-  )
-end
-puts "✅ Created #{users.size} users"
+# # === Users ===
+# users = []
+# 5.times do |i|
+#   users << User.create!(
+#     name: "User#{i + 1}",
+#     password: "password#{i + 1}"
+#   )
+# end
+# puts "✅ Created #{users.size} users"
 
 # === ChoreGroups ===
 chore_groups = []
