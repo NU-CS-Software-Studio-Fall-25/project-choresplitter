@@ -1,9 +1,16 @@
-<h2>Users</h2>
-<ul>
-  <% @users.each do |u| %>
-    # <li><%= u.name%></li> 
-    # <li><%= u.password_digest%></li> 
-    # <li><%= u.created_at%></li> 
-    # <li><%= u.updated_at%></li> 
-  <% end %>
-</ul>
+<h2>My Chore Groups</h2>
+
+<% if @chore_groups.any? %>
+  <ul>
+    <% @chore_groups.each do |group| %>
+      <li>
+        <strong>Name:</strong> <%= group.name %><br>
+        # <strong>ID:</strong> <%= group.id %><br>
+        # <strong>Admin:</strong> <%= group.admin&.name || "(none)" %>
+         <strong>Name:</strong> <%= group.admin_id %><br>
+      </li>
+    <% end %>
+  </ul>
+<% else %>
+  <p>This user is not in any chore groups yet.</p>
+<% end %>

@@ -15,7 +15,7 @@ Rails.application.routes.draw do
   resource :password, only: [:new, :create, :edit, :update]
 
   resources :users
-  resources :chore_groups
+  # resources :chore_groups
   resources :tasks
   # root "chore_groups#index"
   root "sessions#new"
