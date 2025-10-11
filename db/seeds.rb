@@ -1,8 +1,8 @@
 Task.destroy_all
+TaskGroup.destroy_all
 Member.destroy_all
 ChoreGroup.destroy_all
 User.destroy_all
-TaskGroup.destroy_all
 
 puts "Seeding data..."
 
@@ -33,7 +33,7 @@ chore_groups.each do |group|
     members << Member.create!(
       user: user,
       chore_group: group,
-      role: ["member", "manager"].sample,
+      role: %w[member manager].sample,
       points: rand(0..50)
     )
   end
@@ -43,22 +43,37 @@ puts "✅ Added #{members.count} members to groups"
 # === TaskGroups ===
 task_groups = []
 chore_groups.each do |group|
-  2.times do |i|
-    task_groups << TaskGroup.create!(
-      chore_group: group
-    )
+  2.times do
+    task_groups << TaskGroup.create!(chore_group: group)
   end
 end
 puts "✅ Created #{task_groups.count} task groups"
 
+# Pre-group members by chore_group_id for fast lookups
+members_by_group = members.group_by(&:chore_group_id)
+
 # === Tasks ===
 tasks = []
 task_groups.each do |tg|
+  eligible = members_by_group[tg.chore_group_id] || []
+
+  # Fallback: if no member exists yet for this group (shouldn't happen), create one
+  if eligible.empty?
+    fallback_user = users.sample
+    eligible << Member.create!(
+      user: fallback_user,
+      chore_group_id: tg.chore_group_id,
+      role: "member",
+      points: 0
+    )
+  end
+
   3.times do |i|
+    assignee_member = eligible.sample
     tasks << Task.create!(
-      title: "Task #{i + 1} for #{tg.chore_group}",
+      title: "Task #{i + 1} for #{ChoreGroup.find(tg.chore_group_id).name}",
       description: "This is an auto-generated task.",
-      assignee: users.sample,
+      member: assignee_member,   # ← assign via association to guarantee presence
       task_group: tg
     )
   end

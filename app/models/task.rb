@@ -1,6 +1,6 @@
 class Task < ApplicationRecord
   belongs_to :task_group
-  belongs_to :assignee, class_name: "User"
+  belongs_to :member
 
   validates :title, presence: true
 end
