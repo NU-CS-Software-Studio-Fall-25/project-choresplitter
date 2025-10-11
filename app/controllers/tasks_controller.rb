@@ -2,9 +2,17 @@ class TasksController < ApplicationController
   before_action :set_task, only: [:show, :edit, :update, :destroy]
 
   def index
-    @tasks = Task.includes(:assignee, :chore_group).order(created_at: :desc)
-    @tasks = @tasks.where(chore_group_id: params[:chore_group_id]) if params[:chore_group_id].present?
-    @tasks = @tasks.where(assignee_id: params[:assignee_id])       if params[:assignee_id].present?
+    @tasks = Task
+      .includes(:member, task_group: :chore_group) # eager-load to avoid N+1
+      .order(created_at: :desc)
+
+    if params[:task_group_id].present?
+      @tasks = @tasks.where(task_group_id: params[:task_group_id])
+    end
+
+    if params[:member_id].present?
+      @tasks = @tasks.where(member_id: params[:member_id])
+    end
   end
 
   def show; end
@@ -43,7 +51,9 @@ class TasksController < ApplicationController
     @task = Task.find(params[:id])
   end
 
+  # Strong params updated to match schema
   def task_params
-    params.require(:task).permit(:title, :description, :assignee_id, :chore_group_id)
+    params.require(:task).permit(:title, :description, :member_id, :task_group_id)
   end
 end
+

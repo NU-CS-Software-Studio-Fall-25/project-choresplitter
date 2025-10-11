@@ -1,0 +1,11 @@
+<h2>All tasks</h2>
+<ul>
+  <% @tasks.each do |t| %>
+    <li><%= t.title%></li> 
+    <li><%= t.description%></li> 
+    <li><%= t.member_id%></li> 
+    <li><%= t.task_group_id%></li> 
+    <li><%= t.created_at%></li> 
+    <li><%= t.updated_at%></li> 
+  <% end %>
+</ul>
