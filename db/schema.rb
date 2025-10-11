@@ -40,11 +40,11 @@ ActiveRecord::Schema[8.0].define(version: 2025_10_11_075523) do
   create_table "tasks", force: :cascade do |t|
     t.string "title"
     t.text "description"
-    t.integer "assignee_id", null: false
+    t.integer "member_id", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.integer "task_group_id", null: false
-    t.index ["assignee_id"], name: "index_tasks_on_assignee_id"
+    t.index ["member_id"], name: "index_tasks_on_member_id"
     t.index ["task_group_id"], name: "index_tasks_on_task_group_id"
   end
 
@@ -58,6 +58,6 @@ ActiveRecord::Schema[8.0].define(version: 2025_10_11_075523) do
   add_foreign_key "members", "chore_groups"
   add_foreign_key "members", "users"
   add_foreign_key "task_groups", "chore_groups"
+  add_foreign_key "tasks", "members"
   add_foreign_key "tasks", "task_groups"
-  add_foreign_key "tasks", "users", column: "assignee_id"
 end
