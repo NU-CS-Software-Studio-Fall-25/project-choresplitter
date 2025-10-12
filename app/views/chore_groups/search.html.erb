@@ -1,0 +1,12 @@
+<h2>Found Chore Group</h2>
+<p>
+  <strong>Name:</strong> <%= @found_group.name %><br>
+  <strong>ID:</strong> <%= @found_group.id %><br>
+  <strong>Admin:</strong> <%= @found_group.admin_id || "(none)" %>
+</p>
+
+<% if @found_group.users.exists?(current_user.id) %>
+  <em>You're already a member.</em>
+<% else %>
+  <%= button_to "Join this group", join_chore_group_path(@found_group.id), method: :post %>
+<% end %>

@@ -1,6 +1,7 @@
 class ApplicationController < ActionController::Base
   include Authentication
   # Only allow modern browsers su
+  helper_method :current_user, :user_signed_in?
 
   private
 

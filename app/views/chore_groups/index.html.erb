@@ -1,12 +1,5 @@
-<h1>My Chore Groups</h1>
+<h1>Chore Groups</h1>
 
-<ul>
-  <% @chore_groups.each do |group| %>
-    <li>
-      <strong>Name:</strong> <%= group.name %><br>
-      <strong>ID:</strong> <%= group.id %><br>
-      <strong>Admin:</strong> <%= User.find(group.admin_id).name if group.admin_id %>
-    </li>
-    <hr>
-  <% end %>
-</ul>
+<% if flash[:alert] %>
+  <p><%= flash[:alert] %></p>
+<% end %>
