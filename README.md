@@ -3,6 +3,9 @@
 - Albert Luo
 - Kevin Han
 - Mariama Bah
+
+## Heroku Link
+https://chore-splitter-db7f2e34cad4.herokuapp.com/
 ## Description
 A mobile application designed for roommates to manage shared
 responsibilities and expenses. The app allows users to create and
