@@ -1,0 +1,22 @@
+<div style="background-color: white; padding: 20px 40px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1); width: 100%; max-width: 600px; margin: 40px auto; font-family: sans-serif;">
+
+  <h2 style="color: #333; border-bottom: 1px solid #eee; padding-bottom: 15px; margin-top: 10px;">
+    My Chore Groups
+  </h2>
+
+  <% if @chore_groups.any? %>
+    <ul style="list-style-type: none; margin: 0; padding: 0;">
+      <% @chore_groups.each do |group| %>
+        <li style="padding: 15px 5px; border-bottom: 1px solid #eee;">
+          <strong style="color: #555; display: inline-block; width: 100px;">Name:</strong> <%= group.name %><br>
+          <strong style="color: #555; display: inline-block; width: 100px;">Admin ID:</strong> <%= group.admin_id %>
+        </li>
+      <% end %>
+    </ul>
+  <% else %>
+    <p style="color: #777; background-color: #f9f9f9; padding: 20px; text-align: center; border-radius: 4px;">
+      This user is not in any chore groups yet.
+    </p>
+  <% end %>
+
+</div>

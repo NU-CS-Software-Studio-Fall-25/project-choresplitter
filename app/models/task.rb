@@ -1,6 +1,6 @@
 class Task < ApplicationRecord
-  belongs_to :assignee, class_name: "User"
+  belongs_to :task_group
+  belongs_to :member
 
-  has_many :members, dependent: :destroy
-  has_many :users, through: :members
+  validates :title, presence: true
 end

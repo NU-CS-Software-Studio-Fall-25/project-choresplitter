@@ -10,35 +10,65 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_10_07_011351) do
+ActiveRecord::Schema[8.0].define(version: 2025_10_11_211856) do
+  create_table "chore_groups", force: :cascade do |t|
+    t.string "name"
+    t.integer "admin_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["admin_id"], name: "index_chore_groups_on_admin_id"
+  end
+
   create_table "members", force: :cascade do |t|
     t.integer "user_id", null: false
-    t.integer "task_id", null: false
     t.string "role"
     t.integer "points"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["task_id"], name: "index_members_on_task_id"
+    t.integer "chore_group_id", null: false
+    t.index ["chore_group_id"], name: "index_members_on_chore_group_id"
     t.index ["user_id"], name: "index_members_on_user_id"
+  end
+
+  create_table "sessions", force: :cascade do |t|
+    t.integer "user_id", null: false
+    t.string "ip_address"
+    t.string "user_agent"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["user_id"], name: "index_sessions_on_user_id"
+  end
+
+  create_table "task_groups", force: :cascade do |t|
+    t.integer "chore_group_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["chore_group_id"], name: "index_task_groups_on_chore_group_id"
   end
 
   create_table "tasks", force: :cascade do |t|
     t.string "title"
     t.text "description"
-    t.integer "assignee_id", null: false
+    t.integer "member_id", null: false
+    t.integer "task_group_id", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["assignee_id"], name: "index_tasks_on_assignee_id"
+    t.index ["member_id"], name: "index_tasks_on_member_id"
+    t.index ["task_group_id"], name: "index_tasks_on_task_group_id"
   end
 
   create_table "users", force: :cascade do |t|
-    t.string "name"
-    t.string "password_digest"
+    t.string "email_address", null: false
+    t.string "password_digest", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.index ["email_address"], name: "index_users_on_email_address", unique: true
   end
 
-  add_foreign_key "members", "tasks"
+  add_foreign_key "members", "chore_groups"
   add_foreign_key "members", "users"
-  add_foreign_key "tasks", "assignees"
+  add_foreign_key "sessions", "users"
+  add_foreign_key "task_groups", "chore_groups"
+  add_foreign_key "tasks", "members"
+  add_foreign_key "tasks", "task_groups"
 end
