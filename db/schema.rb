@@ -47,10 +47,10 @@ ActiveRecord::Schema[8.0].define(version: 2025_10_11_211856) do
   end
 
   create_table "tasks", force: :cascade do |t|
-    t.string "title"
+    t.string "title", null: false
     t.text "description"
-    t.integer "member_id", null: false
-    t.integer "task_group_id", null: false
+    t.bigint "member_id", null: false
+    t.bigint "task_group_id", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["member_id"], name: "index_tasks_on_member_id"
