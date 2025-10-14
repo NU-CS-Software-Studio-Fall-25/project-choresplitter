@@ -4,6 +4,9 @@
 - Kevin Han
 - Mariama Bah
 
+## Note
+We did most of the work online using VSCode LiveShare, so our individual contributions may appear under one individual.
+
 ## Heroku Link
 https://chore-splitter-db7f2e34cad4.herokuapp.com/
 ## Description
