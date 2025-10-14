@@ -18,6 +18,7 @@ class SessionsController < ApplicationController
     if user&.authenticate(password) # requires has_secure_password + password_digest
       reset_session               # prevents session fixation
       session[:user_id] = user.id
+      start_new_session_for(user) 
       redirect_to users_path, notice: "Signed in!"
     else
       flash.now[:alert] = "Try another email address or password."
