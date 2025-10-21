@@ -10,8 +10,30 @@
     margin: 5% 5%;
     box-shadow: 0px 2px 5px #0000001a;
     border-radius: 8px;
+    background-color: white;
+}
+
+:root{
+   background-color: #FEDBD0;
 }
 
 body{
-    /*base styling we want applied to everything here*/
+    /*base styling goes here*/
+    font-family: sans-serif;
+    color: #442C2E
 }
+
+
+
+a{
+    color: #442C2E;
+    text-decoration: none;
+    white-space: nowrap;
+}
+
+a:hover{
+    text-decoration: underline;
+    font-weight: bold;
+    
+}
+/*beige pink primary color, text color #442C2E, for buttons, purple secondary color with white text */
