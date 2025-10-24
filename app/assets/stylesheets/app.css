@@ -1,39 +1,12 @@
-.nav-style {
-    list-style-type: none;
-    display: flex;
-    gap: 25px;
-    align-content: center;
-    align-items: center;
-    justify-content: center;
-    flex-wrap: wrap;
-    padding: 2% 2%;
-    margin: 5% 5%;
-    box-shadow: 0px 2px 5px #0000001a;
-    border-radius: 8px;
-    background-color: white;
-}
+/*  */
 
-:root{
-   background-color: #FEDBD0;
-}
-
-body{
-    /*base styling goes here*/
+.users-page {
+    background-color: white; 
+    padding: 20px 40px; 
+    border-radius: 8px; 
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1); 
+    width: 100%; 
+    max-width: 600px; 
+    margin: 40px auto; 
     font-family: sans-serif;
-    color: #442C2E
 }
-
-
-
-a{
-    color: #442C2E;
-    text-decoration: none;
-    white-space: nowrap;
-}
-
-a:hover{
-    text-decoration: underline;
-    font-weight: bold;
-    
-}
-/*beige pink primary color, text color #442C2E, for buttons, purple secondary color with white text */
