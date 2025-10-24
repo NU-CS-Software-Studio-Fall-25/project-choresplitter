@@ -1,0 +1,12 @@
+<% content_for :title, "Editing bill share" %>
+
+<h1>Editing bill share</h1>
+
+<%= render "form", bill_share: @bill_share %>
+
+<br>
+
+<div>
+  <%= link_to "Show this bill share", @bill_share %> |
+  <%= link_to "Back to bill shares", bill_shares_path %>
+</div>
