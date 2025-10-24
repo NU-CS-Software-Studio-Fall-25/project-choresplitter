@@ -1,4 +1,4 @@
-/*  */
+/* storage for the inline css stuff */
 
 .users-page {
     background-color: white; 
@@ -9,4 +9,8 @@
     max-width: 600px; 
     margin: 40px auto; 
     font-family: sans-serif;
+}
+
+.new-chore-group {
+    font-family: "Nunito", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
 }
