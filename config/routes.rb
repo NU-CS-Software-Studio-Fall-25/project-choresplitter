@@ -11,6 +11,7 @@ Rails.application.routes.draw do
 
   # Defines the root path route ("/")
   # root "posts#index"
+  get "dashboard-template" => "templates#index"
   resources :chore_groups do
     member do
       post   :join
