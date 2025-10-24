@@ -1,5 +1,6 @@
 class UsersController < ApplicationController
-  before_action :require_login
+  skip_before_action :require_login, only: [:new, :create] 
+
   before_action :set_user, only: [:show, :edit, :update, :destroy]
   before_action :ensure_self_or_admin, only: [:show, :edit, :update, :destroy]
 
@@ -46,9 +47,9 @@ class UsersController < ApplicationController
 
   private
 
-  def require_login
-    redirect_to new_session_path, alert: "Please sign in first." unless user_signed_in?
-  end
+  # def require_login
+  #   redirect_to new_session_path, alert: "Please sign in first." unless user_signed_in?
+  # end
 
   def ensure_self_or_admin
     # adjust the admin check to your app (e.g., current_user.admin?)
@@ -60,6 +61,6 @@ class UsersController < ApplicationController
   end
 
   def user_params
-    params.require(:user).permit(:name, :password, :password_confirmation)
+    params.require(:user).permit(:email_address, :password, :password_confirmation)
   end
 end
