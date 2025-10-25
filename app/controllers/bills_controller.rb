@@ -1,8 +1,36 @@
 class BillsController < ApplicationController
+  layout "sb_admin"
   before_action :set_bill, only: [:show, :edit, :update, :destroy]
 
   # GET /bills
   def index
+    # @chore_group =
+    #   if params[:chore_group_id].present?
+    #     ChoreGroup.find(params[:chore_group_id])
+    #   elsif defined?(Current) && Current.respond_to?(:user) && Current.user
+    #     Current.user.members.includes(:chore_group).first&.chore_group
+    #   end
+
+    # @chore_group ||= ChoreGroup.first
+
+    # @current_member =
+    #   if defined?(Current) && Current.respond_to?(:user) && Current.user
+    #     @chore_group.members.find_by(user_id: Current.user.id)
+    #   end
+    # @current_member ||= @chore_group.members.first
+
+    # @bills = @chore_group
+    #           #  .bills
+    #            .includes(:member, bill_shares: :member)
+    #            .order(created_at: :desc)
+
+    # @bills_you_paid = @bills.select { |b| b.member_id == @current_member.id }
+
+    # @your_shares = BillShare
+    #                  .includes(bill: [:member, :chore_group])
+    #                  .where(member_id: @current_member.id, bills: { chore_group_id: @chore_group.id })
+    #                  .references(:bills)
+    #                  .order('bills.created_at DESC')
     @bills = Bill.includes(:member, :chore_group).order(created_at: :desc)
 
     if params[:chore_group_id].present?
@@ -21,6 +49,7 @@ class BillsController < ApplicationController
   def new
     @bill = Bill.new
   end
+
 
   # POST /bills
   def create
@@ -114,4 +143,4 @@ class BillsController < ApplicationController
       )
     end
   end
-
+end

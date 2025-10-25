@@ -1,16 +1,173 @@
-<p style="color: green"><%= notice %></p>
+<%# app/views/bills/index.html.erb (pure static mock) %>
+<% content_for :title, "Bills – Choresplitter" %>
 
-<% content_for :title, "Bills" %>
+<div class="container-fluid">
+  <!-- Page Heading -->
+  <div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 text-gray-800 mb-0">
+      Bills <small class="text-muted" style="font-size:.7em;">in Demo Group</small>
+    </h1>
+    <a href="#" class="d-none d-sm-inline-block btn btn-sm btn-primary shadow-sm">
+      <i class="fas fa-plus fa-sm text-white-50"></i> Create Bill
+    </a>
+  </div>
 
-<h1>Bills</h1>
+  <!-- Summary cards -->
+  <div class="row">
 
-<div id="bills">
-  <% @bills.each do |bill| %>
-    <%= render bill %>
-    <p>
-      <%= link_to "Show this bill", bill %>
-    </p>
-  <% end %>
+    <!-- You Paid -->
+    <div class="col-xl-3 col-md-6 mb-4">
+      <div class="card border-left-primary shadow h-100 py-2">
+        <div class="card-body">
+          <div class="row no-gutters align-items-center">
+            <div class="col mr-2">
+              <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">You Paid (Total)</div>
+              <div class="h5 mb-0 font-weight-bold text-gray-800">$240.00</div>
+            </div>
+            <div class="col-auto"><i class="fas fa-wallet fa-2x text-gray-300"></i></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Others owe you -->
+    <div class="col-xl-3 col-md-6 mb-4">
+      <div class="card border-left-success shadow h-100 py-2">
+        <div class="card-body">
+          <div class="row no-gutters align-items-center">
+            <div class="col mr-2">
+              <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Others Owe You (Unpaid)</div>
+              <div class="h5 mb-0 font-weight-bold text-gray-800">$120.00</div>
+            </div>
+            <div class="col-auto"><i class="fas fa-hand-holding-usd fa-2x text-gray-300"></i></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- You owe -->
+    <div class="col-xl-3 col-md-6 mb-4">
+      <div class="card border-left-warning shadow h-100 py-2">
+        <div class="card-body">
+          <div class="row no-gutters align-items-center">
+            <div class="col mr-2">
+              <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">You Owe (Unpaid)</div>
+              <div class="h5 mb-0 font-weight-bold text-gray-800">$45.50</div>
+            </div>
+            <div class="col-auto"><i class="fas fa-exclamation-circle fa-2x text-gray-300"></i></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Involved bills -->
+    <div class="col-xl-3 col-md-6 mb-4">
+      <div class="card border-left-info shadow h-100 py-2">
+        <div class="card-body">
+          <div class="row no-gutters align-items-center">
+            <div class="col mr-2">
+              <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Bills In Group (You Involved)</div>
+              <div class="h5 mb-0 font-weight-bold text-gray-800">6</div>
+            </div>
+            <div class="col-auto"><i class="fas fa-receipt fa-2x text-gray-300"></i></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div><!-- /row summary -->
+
+  <div class="row">
+    <!-- Left: You paid -->
+    <div class="col-lg-6">
+      <div class="card shadow mb-4">
+        <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+          <h6 class="m-0 font-weight-bold text-primary">You paid (others owe you)</h6>
+        </div>
+        <div class="card-body">
+
+          <!-- Example bill -->
+          <div class="mb-3 pb-3 border-bottom">
+            <div class="d-flex justify-content-between align-items-center">
+              <div>
+                <strong>Dinner at Sakura</strong>
+                <div class="small text-muted">
+                  Created at Oct 20, 2025 · Total: $90.00
+                </div>
+              </div>
+              <a href="#" class="btn btn-sm btn-outline-secondary">Details</a>
+            </div>
+            <div class="mt-2">
+              <span class="badge badge-warning">Unpaid</span>
+              <span class="badge badge-light">Alice owes $30.00</span>
+              <span class="badge badge-light">Bob owes $30.00</span>
+            </div>
+          </div>
+
+          <div class="mb-3 pb-3 border-bottom">
+            <div class="d-flex justify-content-between align-items-center">
+              <div>
+                <strong>Movie Night Snacks</strong>
+                <div class="small text-muted">
+                  Created at Oct 15, 2025 · Total: $45.00
+                </div>
+              </div>
+              <a href="#" class="btn btn-sm btn-outline-secondary">Details</a>
+            </div>
+            <div class="mt-2">
+              <span class="badge badge-success">All settled</span>
+              <div class="mt-1 small text-muted">
+                Paid: <span class="badge badge-success">Alice $15.00</span>
+                <span class="badge badge-success">Bob $15.00</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="text-muted">End of your bills.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right: You owe -->
+    <div class="col-lg-6">
+      <div class="card shadow mb-4">
+        <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+          <h6 class="m-0 font-weight-bold text-primary">You owe (your shares)</h6>
+        </div>
+        <div class="card-body">
+
+          <div class="mb-3 pb-3 border-bottom">
+            <div class="d-flex justify-content-between align-items-center">
+              <div>
+                <strong>Uber Ride to Downtown</strong>
+                <div class="small text-muted">
+                  Payer: Alice · Your share: $10.50 · Oct 18, 2025
+                </div>
+              </div>
+              <div>
+                <span class="badge badge-warning">Unpaid</span>
+                <a href="#" class="btn btn-sm btn-outline-secondary ml-2">Details</a>
+              </div>
+            </div>
+          </div>
+
+          <div class="mb-3 pb-3 border-bottom">
+            <div class="d-flex justify-content-between align-items-center">
+              <div>
+                <strong>BBQ Ingredients</strong>
+                <div class="small text-muted">
+                  Payer: Bob · Your share: $35.00 · Oct 10, 2025
+                </div>
+              </div>
+              <div>
+                <span class="badge badge-success">Paid</span>
+                <a href="#" class="btn btn-sm btn-outline-secondary ml-2">Details</a>
+              </div>
+            </div>
+          </div>
+
+          <div class="text-muted">End of your shares.</div>
+        </div>
+      </div>
+    </div>
+  </div><!-- /row -->
 </div>
-
-<%= link_to "New bill", new_bill_path %>

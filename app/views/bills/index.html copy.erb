@@ -1,0 +1,189 @@
+<%# app/views/bills/index.html.erb %>
+<% content_for :title, "Bills – Choresplitter" %>
+
+<div class="container-fluid">
+  <!-- Page Heading -->
+  <div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 text-gray-800 mb-0">
+      Bills
+      <% if @chore_group %>
+        <small class="text-muted" style="font-size:.7em;">&nbsp;in <%= @chore_group.name %></small>
+      <% end %>
+    </h1>
+
+    <div>
+      <%= link_to "Create Bill", (defined?(new_bill_path) ? new_bill_path : "#"),
+          class: "d-none d-sm-inline-block btn btn-sm btn-primary shadow-sm" %>
+    </div>
+  </div>
+
+  <%# 汇总统计（顶部四张彩色卡片） %>
+  <div class="row">
+
+    <%# 你创建的账单总额 %>
+    <div class="col-xl-3 col-md-6 mb-4">
+      <div class="card border-left-primary shadow h-100 py-2">
+        <div class="card-body">
+          <div class="row no-gutters align-items-center">
+            <div class="col mr-2">
+              <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">You Paid (Total)</div>
+              <% total_you_paid = @bills_you_paid.sum(&:total_amount) rescue 0 %>
+              <div class="h5 mb-0 font-weight-bold text-gray-800"><%= number_to_currency(total_you_paid || 0) %></div>
+            </div>
+            <div class="col-auto"><i class="fas fa-wallet fa-2x text-gray-300"></i></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <%# 别人欠你的（仅统计未支付的 share） %>
+    <div class="col-xl-3 col-md-6 mb-4">
+      <div class="card border-left-success shadow h-100 py-2">
+        <div class="card-body">
+          <div class="row no-gutters align-items-center">
+            <div class="col mr-2">
+              <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Others Owe You (Unpaid)</div>
+              <% you_are_creditor_unpaid = (@bills_you_paid || []).sum do |b|
+                   b.bill_shares.select { |s| s.status == "unpaid" && s.member_id != @current_member.id }.sum(&:amount)
+                 end rescue 0 %>
+              <div class="h5 mb-0 font-weight-bold text-gray-800"><%= number_to_currency(you_are_creditor_unpaid || 0) %></div>
+            </div>
+            <div class="col-auto"><i class="fas fa-hand-holding-usd fa-2x text-gray-300"></i></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <%# 你欠别人的（未支付） %>
+    <div class="col-xl-3 col-md-6 mb-4">
+      <div class="card border-left-warning shadow h-100 py-2">
+        <div class="card-body">
+          <div class="row no-gutters align-items-center">
+            <div class="col mr-2">
+              <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">You Owe (Unpaid)</div>
+              <% you_owe_unpaid = (@your_shares || []).select { |s| s.status == "unpaid" && s.bill.member_id != @current_member.id }.sum(&:amount) rescue 0 %>
+              <div class="h5 mb-0 font-weight-bold text-gray-800"><%= number_to_currency(you_owe_unpaid || 0) %></div>
+            </div>
+            <div class="col-auto"><i class="fas fa-exclamation-circle fa-2x text-gray-300"></i></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <%# 你参与的账单数量 %>
+    <div class="col-xl-3 col-md-6 mb-4">
+      <div class="card border-left-info shadow h-100 py-2">
+        <div class="card-body">
+          <div class="row no-gutters align-items-center">
+            <div class="col mr-2">
+              <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Bills In Group (You Involved)</div>
+              <% involved_count = ((@bills_you_paid || []).size + (@your_shares || []).map(&:bill_id).uniq.size) rescue 0 %>
+              <div class="h5 mb-0 font-weight-bold text-gray-800"><%= involved_count %></div>
+            </div>
+            <div class="col-auto"><i class="fas fa-receipt fa-2x text-gray-300"></i></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div><!-- /row summary -->
+
+  <div class="row">
+    <!-- 左侧：你支付的账单（别人欠你） -->
+    <div class="col-lg-6">
+      <div class="card shadow mb-4">
+        <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+          <h6 class="m-0 font-weight-bold text-primary">You paid (others owe you)</h6>
+        </div>
+        <div class="card-body">
+          <% if (@bills_you_paid || []).any? %>
+            <% @bills_you_paid.each do |bill| %>
+              <div class="mb-3 pb-3 border-bottom">
+                <div class="d-flex justify-content-between align-items-center">
+                  <div>
+                    <strong><%= bill.description %></strong>
+                    <div class="small text-muted">
+                      Created at <%= l(bill.created_at, format: :short) rescue bill.created_at.to_s %>
+                      · Total: <%= number_to_currency(bill.total_amount) %>
+                    </div>
+                  </div>
+                  <div>
+                    <%= link_to "Details", (defined?(bill_path) ? bill_path(bill) : "#"), class: "btn btn-sm btn-outline-secondary" %>
+                  </div>
+                </div>
+
+                <%# 这个账单中，未支付的欠你的人 %>
+                <% unpaid_shares = bill.bill_shares.select { |s| s.status == "unpaid" && s.member_id != @current_member.id } %>
+                <% paid_shares   = bill.bill_shares.select { |s| s.status == "paid"   && s.member_id != @current_member.id } %>
+
+                <div class="mt-2">
+                  <% if unpaid_shares.any? %>
+                    <span class="badge badge-warning">Unpaid</span>
+                    <% unpaid_shares.each do |s| %>
+                      <span class="badge badge-light">
+                        <%= s.member.user&.email_address || "Member##{s.member_id}" %>
+                        owes <%= number_to_currency(s.amount) %>
+                      </span>
+                    <% end %>
+                  <% else %>
+                    <span class="badge badge-success">All settled</span>
+                  <% end %>
+                </div>
+
+                <% if paid_shares.any? %>
+                  <div class="mt-1 small text-muted">
+                    Paid:
+                    <% paid_shares.each do |s| %>
+                      <span class="badge badge-success">
+                        <%= s.member.user&.email_address || "Member##{s.member_id}" %> <%= number_to_currency(s.amount) %>
+                      </span>
+                    <% end %>
+                  </div>
+                <% end %>
+              </div>
+            <% end %>
+          <% else %>
+            <div class="text-muted">No bills created by you yet.</div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+
+    <!-- 右侧：你欠别人的账单（你的 share） -->
+    <div class="col-lg-6">
+      <div class="card shadow mb-4">
+        <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+          <h6 class="m-0 font-weight-bold text-primary">You owe (your shares)</h6>
+        </div>
+        <div class="card-body">
+          <% if (@your_shares || []).any? %>
+            <% @your_shares.each do |share| %>
+              <% bill = share.bill %>
+              <div class="mb-3 pb-3 border-bottom">
+                <div class="d-flex justify-content-between align-items-center">
+                  <div>
+                    <strong><%= bill.description %></strong>
+                    <div class="small text-muted">
+                      Payer: <%= bill.member.user&.email_address || "Member##{bill.member_id}" %>
+                      · Your share: <%= number_to_currency(share.amount) %>
+                      · <%= l(bill.created_at, format: :short) rescue bill.created_at.to_s %>
+                    </div>
+                  </div>
+                  <div>
+                    <% if share.status == "unpaid" %>
+                      <span class="badge badge-warning">Unpaid</span>
+                    <% else %>
+                      <span class="badge badge-success">Paid</span>
+                    <% end %>
+                    <%= link_to "Details", (defined?(bill_path) ? bill_path(bill) : "#"), class: "btn btn-sm btn-outline-secondary ml-2" %>
+                  </div>
+                </div>
+              </div>
+            <% end %>
+          <% else %>
+            <div class="text-muted">No shares for you in this group.</div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div><!-- /row -->
+</div>
