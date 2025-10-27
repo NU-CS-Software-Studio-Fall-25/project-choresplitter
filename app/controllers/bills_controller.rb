@@ -22,7 +22,7 @@ class BillsController < ApplicationController
 
     @bills = Bill
       .where(chore_group_id: @chore_group.id)
-      .includes(:member, bill_shares: :member) # 预加载创建者和份额成员
+      .includes(:member, bill_shares: :member) 
       .order(created_at: :desc)
 
     @bills_you_paid = @bills.where(member_id: @current_member.id)
@@ -85,17 +85,13 @@ end
 
   # POST /bills
   def create
-    # 1️⃣ 先从 params 拿出 shared_member_ids
     shared_member_ids = (params[:bill][:shared_member_ids] || []).reject(&:blank?).map(&:to_i)
 
-    # 2️⃣ 再去掉这个 key，避免传给 Bill.new
     safe_params = bill_params.except(:shared_member_ids)
 
-    # 3️⃣ 创建 Bill
     @bill = Bill.new(safe_params)
 
     if @bill.save
-      # 4️⃣ 再用 shared_member_ids 去创建分摊记录
       create_bill_shares_for_group(@bill, shared_member_ids)
       redirect_to @bill, notice: "Bill created and shared successfully."
     else
@@ -136,7 +132,7 @@ end
   def create_bill_shares_for_group(bill, selected_member_ids)
     return if selected_member_ids.nil?
 
-    selected_member_ids -= [bill.member_id] # 排除payer
+    selected_member_ids -= [bill.member_id] 
     members = Member.where(id: selected_member_ids)
     share_amount = (bill.total_amount / (members.size + 1)).round(2)
 
