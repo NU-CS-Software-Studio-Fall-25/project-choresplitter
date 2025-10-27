@@ -15,6 +15,7 @@ class ChoreGroupsController < ApplicationController
     @chore_group = ChoreGroup.new(chore_group_params)
     @chore_group.admin = current_user
     if @chore_group.save
+      @chore_group.task_groups.create!(chore_group_id: @chore_group.id)
       membership = @chore_group.members.build(
           user: current_user,
           role: "member",

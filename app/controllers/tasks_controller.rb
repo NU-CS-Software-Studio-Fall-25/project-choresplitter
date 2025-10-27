@@ -1,59 +1,45 @@
 class TasksController < ApplicationController
-  before_action :set_task, only: [:show, :edit, :update, :destroy]
-
-  def index
-    @tasks = Task
-      .includes(:member, task_group: :chore_group) # eager-load to avoid N+1
-      .order(created_at: :desc)
-
-    if params[:task_group_id].present?
-      @tasks = @tasks.where(task_group_id: params[:task_group_id])
-    end
-
-    if params[:member_id].present?
-      @tasks = @tasks.where(member_id: params[:member_id])
-    end
-  end
-
-  def show; end
-
-  def new
-    @task = Task.new
-  end
+  before_action :set_chore_group
+  before_action :set_task_group
+  before_action :set_task, only: [:update, :destroy]
 
   def create
-    @task = Task.new(task_params)
-    if @task.save
-      redirect_to @task, notice: "Task created."
-    else
-      render :new, status: :unprocessable_entity
-    end
+    attrs = params.fetch(:task, {}).permit(:title, :description)
+    attrs[:title] = "New Task" if attrs[:title].blank?
+    @task = @task_group.tasks.create(attrs)
+
+    notice = @task.persisted? ? "Task created." : @task.errors.full_messages.to_sentence
+    redirect_back fallback_location: chore_group_task_group_path(@chore_group, @task_group),
+                  notice: notice, status: :see_other
   end
 
-  def edit; end
-
   def update
-    if @task.update(task_params)
-      redirect_to @task, notice: "Task updated."
+    # You can also permit :title/:description if you want edits here too
+    if @task.update(params.require(:task).permit(:member_id))
+      redirect_back fallback_location: chore_group_task_group_path(@chore_group, @task_group),
+                    notice: "Assignee updated.", status: :see_other
     else
-      render :edit, status: :unprocessable_entity
+      redirect_back fallback_location: chore_group_task_group_path(@chore_group, @task_group),
+                    alert: @task.errors.full_messages.to_sentence, status: :see_other
     end
   end
 
   def destroy
     @task.destroy
-    redirect_to tasks_path, notice: "Task deleted."
+    redirect_back fallback_location: chore_group_task_group_path(@chore_group, @task_group),
+                  notice: "Task deleted.", status: :see_other
   end
 
   private
+  def set_chore_group
+    @chore_group = ChoreGroup.find(params[:chore_group_id])
+  end
+
+  def set_task_group
+    @task_group = @chore_group.task_groups.find(params[:task_group_id])
+  end
 
   def set_task
-    @task = Task.find(params[:id])
-  end
-
-  # Strong params updated to match schema
-  def task_params
-    params.require(:task).permit(:title, :description, :member_id, :task_group_id)
+    @task = @task_group.tasks.find(params[:id])
   end
 end
-

@@ -1,0 +1,32 @@
+<div style="background:#fff; padding:20px 40px; border-radius:8px; box-shadow:0 4px 10px rgba(0,0,0,.1); max-width:800px; margin:40px auto;">
+  <h2 style="margin:0 0 12px;"><%= @chore_group.name %></h2>
+  <p><strong>Admin ID:</strong> <%= @chore_group.admin_id %></p>
+
+    <% if @chore_group.respond_to?(:users) %>
+    <h3 style="margin-top:24px;">Members</h3>
+    <% if @chore_group.users.any? %>
+      <ul>
+        <% @chore_group.users.each do |u| %>
+          <li><%= u.try(:name) || u.try(:email_address) || "User ##{u.id}" %></li>
+        <% end %>
+      </ul>
+    <% else %>
+      <p>No members yet.</p>
+    <% end %>
+  <% end %>
+
+  <h3 style="margin-top:24px;">Task Groups</h3>
+  <% if @chore_group.task_groups.present? %>
+    <ul style="list-style:none; padding:0; margin:0;">
+      <%= render partial: "task_groups/card", collection: @chore_group.task_groups, as: :task_group %>
+    </ul>
+  <% else %>
+    <p>No task groups yet.</p>
+  <% end %>
+
+  <div style="margin-top:24px;">
+    <%= link_to "Back to groups", users_path,
+          style: "padding:8px 12px; border:1px solid #ddd; border-radius:6px; text-decoration:none; background:#f5f5f5; color:#333; font-weight:600;" %>
+  </div>
+</div>
+

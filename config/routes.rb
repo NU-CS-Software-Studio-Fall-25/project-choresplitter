@@ -1,4 +1,5 @@
 Rails.application.routes.draw do
+  get "task_groups/show"
   # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
 
   # Reveal health status on /up that returns 200 if the app boots with no exceptions, otherwise 500.
@@ -13,6 +14,9 @@ Rails.application.routes.draw do
   # root "posts#index"
   get "dashboard-template" => "templates#index"
   resources :chore_groups do
+    resources :task_groups, only: [:show] do
+      resources :tasks
+    end
     member do
       post   :join
       delete :leave

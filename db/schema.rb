@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_10_11_211856) do
+ActiveRecord::Schema[8.0].define(version: 2025_10_24_195321) do
   create_table "chore_groups", force: :cascade do |t|
     t.string "name"
     t.integer "admin_id"
@@ -49,7 +49,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_10_11_211856) do
   create_table "tasks", force: :cascade do |t|
     t.string "title", null: false
     t.text "description"
-    t.bigint "member_id", null: false
+    t.bigint "member_id"
     t.bigint "task_group_id", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
