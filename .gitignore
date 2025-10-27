@@ -33,3 +33,5 @@
 # Ignore master key for decrypting credentials and more.
 /config/master.key
 config/database.yml
+app/views/bills/index.html.erb template
+app/views/bills/new.html copy.erb

@@ -30,6 +30,8 @@ Rails.application.routes.draw do
       post :join
       post :search
     end
+
+    resources :bills, only: [:index, :new]
   end
   resource :session, only: [:new, :create, :destroy]
   resource :password, only: [:new, :create, :edit, :update]
@@ -38,6 +40,7 @@ Rails.application.routes.draw do
   resources :sessions, only: [:new, :create, :destroy]
   # resources :chore_groups
   resources :tasks
+  resources :bills
   # root "chore_groups#index"
   root "sessions#new"
 end

@@ -4,59 +4,99 @@ class BillsController < ApplicationController
 
   # GET /bills
   def index
-    # @chore_group =
-    #   if params[:chore_group_id].present?
-    #     ChoreGroup.find(params[:chore_group_id])
-    #   elsif defined?(Current) && Current.respond_to?(:user) && Current.user
-    #     Current.user.members.includes(:chore_group).first&.chore_group
-    #   end
+    @chore_group =
+      if params[:chore_group_id].present?
+        ChoreGroup.find_by(id: params[:chore_group_id])
+      elsif Current&.user
+        Current.user.members.includes(:chore_group).first&.chore_group
+      end
+    @chore_group ||= ChoreGroup.first
+    raise ActiveRecord::RecordNotFound, "No ChoreGroup found" unless @chore_group
 
-    # @chore_group ||= ChoreGroup.first
+    @current_member =
+      if Current&.user
+        @chore_group.members.find_by(user_id: Current.user.id)
+      end
+    @current_member ||= @chore_group.members.first
+    raise ActiveRecord::RecordNotFound, "No Member in this group" unless @current_member
 
-    # @current_member =
-    #   if defined?(Current) && Current.respond_to?(:user) && Current.user
-    #     @chore_group.members.find_by(user_id: Current.user.id)
-    #   end
-    # @current_member ||= @chore_group.members.first
+    @bills = Bill
+      .where(chore_group_id: @chore_group.id)
+      .includes(:member, bill_shares: :member) # 预加载创建者和份额成员
+      .order(created_at: :desc)
 
-    # @bills = @chore_group
-    #           #  .bills
-    #            .includes(:member, bill_shares: :member)
-    #            .order(created_at: :desc)
+    @bills_you_paid = @bills.where(member_id: @current_member.id)
 
-    # @bills_you_paid = @bills.select { |b| b.member_id == @current_member.id }
+    @your_shares = BillShare
+      .joins(:bill)
+      .includes(bill: [:member, :chore_group])
+      .where(member_id: @current_member.id, bills: { chore_group_id: @chore_group.id })
+      .order('bills.created_at DESC')
 
-    # @your_shares = BillShare
-    #                  .includes(bill: [:member, :chore_group])
-    #                  .where(member_id: @current_member.id, bills: { chore_group_id: @chore_group.id })
-    #                  .references(:bills)
-    #                  .order('bills.created_at DESC')
-    @bills = Bill.includes(:member, :chore_group).order(created_at: :desc)
 
-    if params[:chore_group_id].present?
-      @bills = @bills.where(chore_group_id: params[:chore_group_id])
-    end
+    @total_you_paid = @bills_you_paid.sum(:total_amount)
+    @you_are_creditor_unpaid = BillShare
+      .joins(:bill)
+      .where(bills: { chore_group_id: @chore_group.id, member_id: @current_member.id })
+      .where(status: 'unpaid')
+      .where.not(member_id: @current_member.id)
+      .sum(:amount)
+    @you_owe_unpaid = BillShare
+      .joins(:bill)
+      .where(member_id: @current_member.id, status: 'unpaid', bills: { chore_group_id: @chore_group.id })
+      .where.not(bills: { member_id: @current_member.id })
+      .sum(:amount)
+    involved_via_shares_count = BillShare
+      .joins(:bill)
+      .where(member_id: @current_member.id, bills: { chore_group_id: @chore_group.id })
+      .select('DISTINCT bills.id')
+      .count
 
-    if params[:member_id].present?
-      @bills = @bills.where(member_id: params[:member_id])
-    end
+    @involved_count = @bills_you_paid.count + involved_via_shares_count
   end
+
 
   # GET /bills/1
   def show; end
 
   # GET /bills/new
-  def new
-    @bill = Bill.new
-  end
+def new
+  @chore_group =
+    if params[:chore_group_id].present?
+      ChoreGroup.find_by(id: params[:chore_group_id])
+    elsif Current&.user
+      Current.user.members.includes(:chore_group).first&.chore_group
+    end
+  @chore_group ||= ChoreGroup.first
+  raise ActiveRecord::RecordNotFound, "No ChoreGroup found" unless @chore_group
+
+  @current_member =
+    if Current&.user
+      @chore_group.members.find_by(user_id: Current.user.id)
+    end
+  @current_member ||= @chore_group.members.first
+  raise ActiveRecord::RecordNotFound, "No Member in this group" unless @current_member
+
+  @bill = Bill.new(chore_group: @chore_group, member: @current_member)
+
+  @members_for_split = @chore_group.members.includes(:user).order(:id)
+end
 
 
   # POST /bills
   def create
-    @bill = Bill.new(bill_params)
+    # 1️⃣ 先从 params 拿出 shared_member_ids
+    shared_member_ids = (params[:bill][:shared_member_ids] || []).reject(&:blank?).map(&:to_i)
+
+    # 2️⃣ 再去掉这个 key，避免传给 Bill.new
+    safe_params = bill_params.except(:shared_member_ids)
+
+    # 3️⃣ 创建 Bill
+    @bill = Bill.new(safe_params)
 
     if @bill.save
-      create_bill_shares_for_group(@bill)
+      # 4️⃣ 再用 shared_member_ids 去创建分摊记录
+      create_bill_shares_for_group(@bill, shared_member_ids)
       redirect_to @bill, notice: "Bill created and shared successfully."
     else
       render :new, status: :unprocessable_entity
@@ -93,26 +133,23 @@ class BillsController < ApplicationController
   end
 
 
-  def create_bill_shares_for_group(bill)
-    selected_member_ids = params[:bill][:shared_member_ids].reject(&:blank?).map(&:to_i)
-    return if selected_member_ids.empty?
-    selected_member_ids -= [bill.member_id] 
+  def create_bill_shares_for_group(bill, selected_member_ids)
+    return if selected_member_ids.nil?
 
+    selected_member_ids -= [bill.member_id] # 排除payer
     members = Member.where(id: selected_member_ids)
-
     share_amount = (bill.total_amount / (members.size + 1)).round(2)
-    # share_amount = (bill.total_amount / members.size).round(2)
 
     members.each do |m|
       BillShare.create!(
         bill: bill,
         member: m,
         amount: share_amount,
-        # status: (m == bill.member ? "paid" : "unpaid")
         status: "unpaid"
       )
     end
   end
+
 
 
   def update_bill_shares(bill)

@@ -1,37 +1,101 @@
-<%= form_with(model: bill) do |form| %>
-  <% if bill.errors.any? %>
-    <div style="color: red">
-      <h2><%= pluralize(bill.errors.count, "error") %> prohibited this bill from being saved:</h2>
+<%= form_with model: bill, local: true do |f| %>
+  <%= f.hidden_field :chore_group_id, value: chore_group.id %>
+  <%= f.hidden_field :member_id, value: current_member.id %>
 
-      <ul>
-        <% bill.errors.each do |error| %>
-          <li><%= error.full_message %></li>
-        <% end %>
-      </ul>
+  <div class="form-group">
+    <label class="small mb-1 text-gray-700">Description</label>
+    <%= f.text_field :description, class: "form-control", placeholder: "e.g., Dinner at Sakura", required: true %>
+  </div>
+
+  <div class="form-group">
+    <label class="small mb-1 text-gray-700">Total Amount</label>
+    <div class="input-group">
+      <div class="input-group-prepend"><span class="input-group-text">$</span></div>
+      <%= f.number_field :total_amount, step: 0.01, min: 0.01, id: "bill_total", class: "form-control", placeholder: "0.00" %>
     </div>
-  <% end %>
-
-  <div>
-    <%= form.label :chore_group_id, style: "display: block" %>
-    <%= form.number_field :chore_group_id %>
+    <small class="form-text text-muted">
+      Will be split equally among selected members (payer included).
+    </small>
   </div>
 
-  <div>
-    <%= form.label :member_id, style: "display: block" %>
-    <%= form.number_field :member_id %>
+  <div class="form-group">
+    <label class="small mb-2 text-gray-700">Participants</label>
+    <div class="card border-left-primary">
+      <div class="card-body py-2">
+        <div class="row">
+          <% members_for_split.each do |m| %>
+            <% mid = m.id %>
+            <% is_me = (mid == current_member.id) %>
+            <div class="col-6 col-md-4 mb-2">
+              <div class="custom-control custom-checkbox">
+                <input
+                  name="bill[shared_member_ids][]"
+                  class="custom-control-input <%= 'split-member' unless is_me %>"
+                  type="checkbox"
+                  id="member_<%= mid %>"
+                  value="<%= mid %>"
+                  <%= is_me ? 'disabled' : 'checked' %>>
+                <label class="custom-control-label" for="member_<%= mid %>">
+                  <%= m.user&.email_address || m.user&.name || "Member##{mid}" %>
+                  <% if is_me %><span class="badge badge-light ml-1">you</span><% end %>
+                </label>
+              </div>
+            </div>
+          <% end %>
+        </div>
+
+        <div class="mt-2">
+          <button class="btn btn-sm btn-outline-secondary" id="toggle-select-others" type="button">
+            Toggle Select Others
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="mt-2 small text-muted" id="split-preview">
+      Selected: <span id="selected-count">0</span> people (excluding you).
+      &nbsp;Each pays: <strong>$<span id="each-amount">0.00</span></strong>
+    </div>
   </div>
 
-  <div>
-    <%= form.label :total_amount, style: "display: block" %>
-    <%= form.text_field :total_amount %>
-  </div>
-
-  <div>
-    <%= form.label :description, style: "display: block" %>
-    <%= form.text_field :description %>
-  </div>
-
-  <div>
-    <%= form.submit %>
+  <div class="d-flex">
+    <%= f.submit "Create Bill", class: "btn btn-primary mr-2" %>
+    <%= link_to "Cancel", bills_path, class: "btn btn-light" %>
   </div>
 <% end %>
+
+<script>
+(function () {
+  const meId = parseInt(
+    document.querySelector('input[name="bill[member_id]"]')?.value,
+    10
+  );
+  function updatePreview() {
+    const totalEl = document.getElementById('bill_total');
+    const boxes = Array.from(document.querySelectorAll('.split-member'));
+    const total = parseFloat(totalEl && totalEl.value) || 0;
+    const selectedOthers = boxes.filter(b => b.checked && parseInt(b.value) !== meId).length;
+    const people = selectedOthers + 1;
+    const each = people > 0 ? (total / people) : 0;
+    const c1 = document.getElementById('selected-count');
+    const c2 = document.getElementById('each-amount');
+    if (c1) c1.innerText = selectedOthers;
+    if (c2) c2.innerText = each.toFixed(2);
+  }
+  document.addEventListener('input', e => {
+    if (e.target.matches('#bill_total, .split-member')) updatePreview();
+  });
+  const toggleBtn = document.getElementById('toggle-select-others');
+  if (toggleBtn) {
+    toggleBtn.addEventListener('click', () => {
+      const boxes = Array.from(document.querySelectorAll('.split-member'));
+      const others = boxes.filter(b => parseInt(b.value) !== meId);
+      const checkedCount = others.filter(b => b.checked).length;
+      const targetState = checkedCount < (others.length / 2);
+      others.forEach(b => b.checked = targetState);
+      updatePreview();
+    });
+  }
+  document.addEventListener('DOMContentLoaded', updatePreview);
+})();
+</script>
