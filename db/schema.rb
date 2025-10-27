@@ -10,7 +10,29 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_10_24_195321) do
+ActiveRecord::Schema[8.0].define(version: 2025_10_24_042248) do
+  create_table "bill_shares", force: :cascade do |t|
+    t.integer "bill_id", null: false
+    t.integer "member_id", null: false
+    t.decimal "amount", precision: 10, scale: 2, default: "0.0", null: false
+    t.string "status", default: "unpaid", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["bill_id"], name: "index_bill_shares_on_bill_id"
+    t.index ["member_id"], name: "index_bill_shares_on_member_id"
+  end
+
+  create_table "bills", force: :cascade do |t|
+    t.integer "chore_group_id", null: false
+    t.integer "member_id", null: false
+    t.decimal "total_amount", precision: 10, scale: 2, null: false
+    t.string "description", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["chore_group_id"], name: "index_bills_on_chore_group_id"
+    t.index ["member_id"], name: "index_bills_on_member_id"
+  end
+
   create_table "chore_groups", force: :cascade do |t|
     t.string "name"
     t.integer "admin_id"
@@ -65,6 +87,10 @@ ActiveRecord::Schema[8.0].define(version: 2025_10_24_195321) do
     t.index ["email_address"], name: "index_users_on_email_address", unique: true
   end
 
+  add_foreign_key "bill_shares", "bills"
+  add_foreign_key "bill_shares", "members"
+  add_foreign_key "bills", "chore_groups"
+  add_foreign_key "bills", "members"
   add_foreign_key "members", "chore_groups"
   add_foreign_key "members", "users"
   add_foreign_key "sessions", "users"

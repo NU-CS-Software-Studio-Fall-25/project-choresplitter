@@ -1,5 +1,7 @@
 Rails.application.routes.draw do
   get "task_groups/show"
+  resources :bill_shares
+  resources :bills
   # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
 
   # Reveal health status on /up that returns 200 if the app boots with no exceptions, otherwise 500.
@@ -28,6 +30,8 @@ Rails.application.routes.draw do
       post :join
       post :search
     end
+
+    resources :bills, only: [:index, :new]
   end
   resource :session, only: [:new, :create, :destroy]
   resource :password, only: [:new, :create, :edit, :update]
@@ -36,6 +40,7 @@ Rails.application.routes.draw do
   resources :sessions, only: [:new, :create, :destroy]
   # resources :chore_groups
   resources :tasks
+  resources :bills
   # root "chore_groups#index"
   root "sessions#new"
 end

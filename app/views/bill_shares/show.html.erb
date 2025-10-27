@@ -1,0 +1,10 @@
+<p style="color: green"><%= notice %></p>
+
+<%= render @bill_share %>
+
+<div>
+  <%= link_to "Edit this bill share", edit_bill_share_path(@bill_share) %> |
+  <%= link_to "Back to bill shares", bill_shares_path %>
+
+  <%= button_to "Destroy this bill share", @bill_share, method: :delete %>
+</div>

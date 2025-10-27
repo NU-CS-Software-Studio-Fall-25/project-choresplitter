@@ -1,0 +1,16 @@
+<p style="color: green"><%= notice %></p>
+
+<% content_for :title, "Bill shares" %>
+
+<h1>Bill shares</h1>
+
+<div id="bill_shares">
+  <% @bill_shares.each do |bill_share| %>
+    <%= render bill_share %>
+    <p>
+      <%= link_to "Show this bill share", bill_share %>
+    </p>
+  <% end %>
+</div>
+
+<%= link_to "New bill share", new_bill_share_path %>
