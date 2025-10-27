@@ -24,6 +24,46 @@
     <p>No task groups yet.</p>
   <% end %>
 
+  <h3 style="margin-top:24px;">Bills</h3>
+
+  <% if @chore_group.bill.any? %>
+    <div style="display:flex; flex-direction:column; gap:16px;">
+        <% @chore_group.bill.each do |bill| %>
+        <div style="border:1px solid #eee; border-radius:8px; padding:12px;">
+            <!-- Bill header (customize fields as needed) -->
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+            <div>
+                <strong>Bill #<%= bill.id %></strong>
+            </div>
+            </div>
+
+            <!-- BillShares list -->
+            <div style="margin-top:10px;">
+            <h4 style="margin:0 0 8px;">Shares</h4>
+            <% if bill.bill_shares.any? %>
+                <div style="display:flex; flex-direction:column; gap:8px;">
+                <%= render partial: "bill_shares/bill_share",
+                            collection: bill.bill_shares,
+                            as: :bill_share %>
+                </div>
+            <% else %>
+                <p style="color:#666; margin:0;">No shares yet.</p>
+            <% end %>
+            </div>
+
+            <!-- New BillShare form (uses your _form.html.erb) -->
+            <div style="margin-top:12px;">
+            <h5 style="margin:0 0 6px;">Add a share</h5>
+            <%= render partial: "bill_shares/form",
+                        locals: { bill_share: BillShare.new(bill_id: bill.id) } %>
+            </div>
+        </div>
+        <% end %>
+    </div>
+    <% else %>
+    <p>No bills yet.</p>
+  <% end %>
+
   <div style="margin-top:24px;">
     <%= link_to "Back to groups", users_path,
           style: "padding:8px 12px; border:1px solid #ddd; border-radius:6px; text-decoration:none; background:#f5f5f5; color:#333; font-weight:600;" %>

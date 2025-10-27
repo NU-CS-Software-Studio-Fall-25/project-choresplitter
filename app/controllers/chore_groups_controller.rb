@@ -21,6 +21,11 @@ class ChoreGroupsController < ApplicationController
           role: "member",
           points: 0
       )
+      @chore_group.bill.create!(
+        member: membership,
+        total_amount: 0,
+        description: "Initial bill"        
+      )
       if membership.save
         redirect_to chore_groups_path
         flash[:alert] = "Chore group created and joined: ID = #{@chore_group.id}"

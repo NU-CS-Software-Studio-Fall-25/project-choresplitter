@@ -19,6 +19,9 @@ Rails.application.routes.draw do
     resources :task_groups, only: [:show] do
       resources :tasks
     end
+    resources :bills, only: [:show, :create, :update, :destroy] do
+      resources :bill_shares, only: [:create, :update, :destroy]
+    end
     member do
       post   :join
       delete :leave
