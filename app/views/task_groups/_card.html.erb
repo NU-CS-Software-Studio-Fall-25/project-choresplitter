@@ -35,7 +35,7 @@
         </li>
 
         <!-- Assign dialog (one per task) -->
-        <dialog id="assign-task-dialog-<%= t.id %>" style="border:none; border-radius:10px; padding:0; box-shadow:0 10px 30px rgba(0,0,0,.2); width:min(520px,90vw);">
+        <dialog id="assign-task-dialog-<%= t.id %>" style="border:none; border-radius:10px; padding:0; box-shadow:0 10px 30px rgba(0,0,0,.2); width:min(520px,90vw); padding: 30px">
           <%= form_with url: polymorphic_path([task_group.chore_group, task_group, t]),
                         method: :patch,
                         style: "padding:20px 24px;" do |f| %>
