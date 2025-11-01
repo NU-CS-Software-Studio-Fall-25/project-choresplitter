@@ -1,4 +1,4 @@
-<div style="background:#fff; padding:20px 40px; border-radius:8px; box-shadow:0 4px 10px rgba(0,0,0,.1); width:80%; margin:40px auto;">
+<div style="color: #1e1e1eff; background:#fff; padding:20px 40px; border-radius:8px; box-shadow:0 4px 10px rgba(0,0,0,.1); width:80%; margin:40px auto;">
   <h2 style="margin:0 0 12px;"><%= @chore_group.name %></h2>
   <p><strong>Admin ID:</strong> <%= @chore_group.admin_id %></p>
 
@@ -29,7 +29,7 @@
   <% if @chore_group.bill.any? %>
     <div style="display:flex; flex-direction:column; gap:16px;">
         <% @chore_group.bill.each do |bill| %>
-        <div style="border:1px solid #eee; border-radius:8px; padding:12px;">
+        <div style="border:1px solid #666; border-radius:8px; padding:12px;">
             <!-- Bill header (customize fields as needed) -->
             <div style="display:flex; justify-content:space-between; align-items:center;">
             <div>
