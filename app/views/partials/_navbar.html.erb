@@ -49,6 +49,17 @@
             <!-- Divider -->
             <hr class="sidebar-divider">
 
+            <% if session[:user_id] %>
+                <li class="nav-item active">
+                    <%= link_to session_path, class: "nav-link", data: { turbo_method: :delete } do %>
+                        <i class="fas fa-solid fa-sign-out-alt" style="color: #ffffff;"></i>
+                        <span>Logout</span>
+                    <% end %>
+                </li>
+
+                <hr class="sidebar-divider">
+            <% end %>
+
             <!-- Sidebar Toggler (Sidebar) -->
             <div class="text-center d-none d-md-inline">
                 <button class="rounded-circle border-0" id="sidebarToggle"></button>
