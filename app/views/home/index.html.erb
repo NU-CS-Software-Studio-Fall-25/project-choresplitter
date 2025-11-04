@@ -1,0 +1,14 @@
+<!--Template Source: https://getbootstrap.com/docs/5.0/examples/heroes/-->
+<header class="px-4 py-5 my-5 text-center" style="color: black;">
+    <%=image_tag("cat-svgrepo-com.svg", size:"100x100",alt:"icon of cat face with bold black outline")%>
+    <h1 class="display-5 fw-bold">CleanCats</h1>
+    <div class="col-lg-6 mx-auto">
+      <p class="lead mb-4">All-in-one chore tracker, bill splitter, and accountability tool. We'll take your place of residence from litterbox to squeaky-clean.</p>
+      <div class="d-grid d-sm-flex justify-content-sm-center" style="column-gap:10px;">
+        <button type="button" class="btn btn-primary btn-lg px-4 gap-3" style="color:white;"><%= link_to("Login", new_session_path, style:"color:white;")%>
+        </button>
+        <button type="button" class="btn btn-outline-secondary btn-lg px-4"><%= link_to("Register", new_user_path)%></button>
+      </div>
+    </div>
+  </div>
+</header>
