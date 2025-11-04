@@ -5,18 +5,17 @@
   </h1>
 
   <%= form_with url: search_chore_groups_path, method: :post, data: { turbo: false } do %>
-    <div style="margin-bottom: 20px;">
-      <%= number_field_tag :search_id, nil, min: 1, placeholder: "Enter Chore Group ID", 
+    <div style="margin-bottom: 16px;">
+      <label style="display:block; font-weight:600; margin-bottom:6px;">Chore Group ID</label>
+      <%= number_field_tag :search_id, nil, min: 1, placeholder: "Enter Chore Group ID",
             style: "width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; font-size: 16px;" %>
     </div>
-
     <div>
-      <%= submit_tag "Join", 
+      <%= submit_tag "Join",
             style: "width: 100%; padding: 12px; background-color: #4e73df; color: white; border: none; border-radius: 4px; font-size: 16px; font-weight: bold; cursor: pointer;" %>
     </div>
   <% end %>
 
-  <%# Flash message is styled and placed inside the card for better UI %>
   <% if flash[:alert] %>
     <p style="padding: 15px; margin-top: 20px; border-radius: 4px; text-align: center; background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb;">
       <%= flash[:alert] %>

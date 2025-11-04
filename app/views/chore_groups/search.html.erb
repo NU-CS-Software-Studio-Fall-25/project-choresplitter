@@ -18,6 +18,12 @@
     <% else %>
       <%# This form replaces button_to to allow for direct inline styling %>
       <%= form_with url: join_chore_group_path(@found_group.id), method: :post do |form| %>
+          <div style="margin-bottom: 20px;">
+          <label style="display:block; font-weight:600; margin-bottom:6px;">Your Name</label>
+          <%= text_field_tag :member_name, nil, placeholder: "e.g., John Doe",
+                style: "width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; font-size: 16px;" %>
+          </div>
+
         <%= form.submit "Join this group", 
               style: "width: 100%; padding: 12px; background-color: #28a745; color: white; border: none; border-radius: 4px; font-size: 16px; font-weight: bold; cursor: pointer;" %>
       <% end %>
