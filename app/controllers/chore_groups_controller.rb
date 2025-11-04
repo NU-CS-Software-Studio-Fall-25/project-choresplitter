@@ -14,12 +14,15 @@ class ChoreGroupsController < ApplicationController
   def create
     @chore_group = ChoreGroup.new(chore_group_params)
     @chore_group.admin = current_user
+    admin_name = params.dig(:chore_group, :admin_name).presence
+    @chore_group.admin_name = admin_name
     if @chore_group.save
       @chore_group.task_groups.create!(chore_group_id: @chore_group.id)
       membership = @chore_group.members.build(
           user: current_user,
           role: "member",
-          points: 0
+          points: 0,
+          name: admin_name
       )
       @chore_group.bill.create!(
         member: membership,
@@ -70,6 +73,7 @@ class ChoreGroupsController < ApplicationController
       end
 
       membership = @chore_group.members.find_by(user: current_user)
+      member_name = params[:member_name].presence
 
       if membership
         redirect_to @chore_group
@@ -78,7 +82,8 @@ class ChoreGroupsController < ApplicationController
         membership = @chore_group.members.build(
           user: current_user,
           role: "member",
-          points: 0
+          points: 0,
+          name: member_name
         )
 
         if membership.save
