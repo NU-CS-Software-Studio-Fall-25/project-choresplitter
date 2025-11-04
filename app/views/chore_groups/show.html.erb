@@ -1,17 +1,17 @@
 <div style="color: #1e1e1eff; background:#fff; padding:20px 40px; border-radius:8px; box-shadow:0 4px 10px rgba(0,0,0,.1); width:80%; margin:40px auto;">
   <h2 style="margin:0 0 12px;"><%= @chore_group.name %></h2>
-  <p><strong>Admin ID:</strong> <%= @chore_group.admin_id %></p>
+  <p><strong>Admin Name:</strong> <%= @chore_group.admin_name %></p>
 
     <% if @chore_group.respond_to?(:users) %>
     <h3 style="margin-top:24px;">Members</h3>
-    <% if @chore_group.users.any? %>
-      <ul>
-        <% @chore_group.users.each do |u| %>
-          <li><%= u.try(:name) || u.try(:email_address) || "User ##{u.id}" %></li>
+    <% if @chore_group.members.any? %>
+    <ul>
+        <% @chore_group.members.each do |m| %>
+        <li><%= m.name.presence || m.user&.email_address || "Member ##{m.id}" %></li>
         <% end %>
-      </ul>
+    </ul>
     <% else %>
-      <p>No members yet.</p>
+    <p>No members yet.</p>
     <% end %>
   <% end %>
 
