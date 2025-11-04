@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_10_24_195321) do
+ActiveRecord::Schema[8.0].define(version: 2025_11_04_061744) do
   create_table "bill_shares", force: :cascade do |t|
     t.integer "bill_id", null: false
     t.integer "member_id", null: false
@@ -38,6 +38,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_10_24_195321) do
     t.integer "admin_id"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "admin_name"
     t.index ["admin_id"], name: "index_chore_groups_on_admin_id"
   end
 
@@ -48,6 +49,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_10_24_195321) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.integer "chore_group_id", null: false
+    t.string "name", limit: 100
     t.index ["chore_group_id"], name: "index_members_on_chore_group_id"
     t.index ["user_id"], name: "index_members_on_user_id"
   end

@@ -8,8 +8,8 @@
       <% @chore_groups.each do |group| %>
         <li style="padding: 15px 5px; border-bottom: 1px solid #757575ff; display:flex; align-items:center; justify-content:space-between; gap:12px;">
           <div>
-            <strong style="color: #000000ff; display: inline-block; width: 100px;">Name:</strong> <%= group.name %><br>
-            <strong style="color: #000000ff; display: inline-block; width: 100px;">Admin ID:</strong> <%= group.admin_id %>
+            <strong style="color: #000000ff; display: inline-block; width: 105px;">Group Name:</strong> <%= group.name %><br>
+            <strong style="color: #000000ff; display: inline-block; width: 105px;">Admin Name:</strong> <%= group.admin_name %>
           </div>
 
           <%= link_to "View group", chore_group_path(group),
