@@ -38,7 +38,7 @@ class ChoreGroupsController < ApplicationController
       end
     else
       flash[:alert] = "Failed to create chore group: #{@chore_group.errors.full_messages.to_sentence}"
-      render :new, status: :unprocessable_entity
+      render :new_chore_group, status: :unprocessable_entity
     end
   end
 

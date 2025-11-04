@@ -9,4 +9,6 @@ class ChoreGroup < ApplicationRecord
 
   has_many :bill, dependent: :destroy
   has_many :bill_share, through: :bill
+
+  validates :name, presence: true, uniqueness: { case_sensitive: false }
 end
