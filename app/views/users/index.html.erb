@@ -17,10 +17,16 @@
         </li>
       <% end %>
     </ul>
+    <div class="py-4">
+       <%=  @pagy.series_nav(:bootstrap).html_safe%>
+    <div>
   <% else %>
     <p style="color: #000000ff; background-color: #f9f9f9; padding: 20px; text-align: center; border-radius: 4px;">
       This user is not in any chore groups yet.
     </p>
+     <div class="py-4">
+       <%=  @pagy.series_nav(:bootstrap).html_safe%>
+    <div>
   <% end %>
 
 </div>

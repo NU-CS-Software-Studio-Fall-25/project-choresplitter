@@ -1,6 +1,6 @@
 class ApplicationController < ActionController::Base
   include Authentication
-  #
+  include Pagy::Method
   before_action :set_current_user
   before_action :require_login
   helper_method :current_user, :user_signed_in?
