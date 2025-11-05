@@ -1,5 +1,5 @@
 <%# The main container is centered and styled like a card %>
-<div style="background-color: white; padding: 40px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1); width: 100%; max-width: 400px; margin: 40px auto; font-family: sans-serif;">
+<div style="color:black; background-color: white; padding: 40px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1); width: 100%; max-width: 400px; margin: 40px auto;">
 
   <%# Flash Messages %>
   <% if flash[:notice] %>
@@ -18,26 +18,26 @@
   <%= form_with url: session_path do |form| %>
 
     <div style="margin-bottom: 20px;">
-      <%= form.label :email_address, style: "display: block; margin-bottom: 8px; color: #555; font-weight: 500;" %>
+      <%= form.label :email_address, style: "display: block; margin-bottom: 8px; color: #242424ff; font-weight: 500;" %>
       <%= form.email_field :email_address, required: true, autofocus: true, autocomplete: "username", placeholder: "Enter your email address", value: params[:email_address], 
             style: "width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box;" %>
     </div>
 
     <div style="margin-bottom: 20px;">
-      <%= form.label :password, style: "display: block; margin-bottom: 8px; color: #555; font-weight: 500;" %>
+      <%= form.label :password, style: "display: block; margin-bottom: 8px; color: #242424ff; font-weight: 500;" %>
       <%= form.password_field :password, required: true, autocomplete: "current-password", placeholder: "Enter your password", maxlength: 72, 
             style: "width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box;" %>
     </div>
     
     <%= form.submit "Sign in", 
-          style: "width: 100%; padding: 12px; background-color: #007bff; color: white; border: none; border-radius: 4px; font-size: 16px; font-weight: bold; cursor: pointer;" %>
+          style: "width: 100%; padding: 12px; background-color: #4e73df; color: white; border: none; border-radius: 4px; font-size: 16px; font-weight: bold; cursor: pointer;" %>
   <% end %>
 
   <div style="text-align: center; margin-top: 20px;">
-    <%= link_to "Forgot password?", new_password_path, style: "color: #007bff; text-decoration: none;" %>
+    <%= link_to "Forgot password?", new_password_path, style: "color: #4e73df; text-decoration: none;" %>
   </div>
 
   <div style="text-align: center; margin-top: 20px;">
-    <%= link_to "Don't have an account? Sign up", new_user_path, style: "color: #007bff; text-decoration: none;" %>
+    <%= link_to "Don't have an account? Sign up", new_user_path, style: "color: #4e73df; text-decoration: none;" %>
   </div>
 </div>
