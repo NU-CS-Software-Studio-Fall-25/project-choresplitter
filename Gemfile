@@ -1,5 +1,11 @@
 source "https://rubygems.org"
 
+# Faker gem for adding lots of test data
+gem "faker"
+# Pagy gem for pagination
+gem "pagy"
+# Pagy nav returns an html string, Nokogiri for parsing it
+gem "nokogiri"
 # Bundle edge Rails instead: gem "rails", github: "rails/rails", branch: "main"
 gem "rails", "~> 8.0.2"
 # The modern asset pipeline for Rails [https://github.com/rails/propshaft]
@@ -41,7 +47,7 @@ gem "thruster", require: false
 gem "pwa"
 
 group :production do
-  gem 'pg', '~> 1.1'
+  gem "pg", "~> 1.1"
 end
 
 group :development, :test do

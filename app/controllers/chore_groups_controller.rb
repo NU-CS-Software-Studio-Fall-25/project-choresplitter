@@ -1,5 +1,5 @@
 class ChoreGroupsController < ApplicationController
-  before_action :set_chore_group, only: [:show, :edit, :update, :destroy]
+  before_action :set_chore_group, only: [ :show, :edit, :update, :destroy ]
 
   def index
     @chore_groups = ChoreGroup.includes(:users).order(created_at: :desc)
@@ -24,7 +24,7 @@ class ChoreGroupsController < ApplicationController
       @chore_group.bill.create!(
         member: membership,
         total_amount: 0,
-        description: "Initial bill"        
+        description: "Initial bill"
       )
       if membership.save
         redirect_to chore_groups_path
@@ -97,9 +97,9 @@ class ChoreGroupsController < ApplicationController
 
 
   def leave
-    #leave a specific choregroup
+    # leave a specific choregroup
 
-    #1. group doesn't exist
+    # 1. group doesn't exist
     @chore_group = ChoreGroup.find_by(id: params[:id])
     if @chore_group.nil?
       redirect_to chore_groups_path, alert: "This group does not exist."
@@ -127,7 +127,6 @@ class ChoreGroupsController < ApplicationController
       # This case is rare but good to have for robustness
       redirect_to @chore_group, alert: "An error occurred while trying to leave the group."
     end
-
   end
 
   def destroy

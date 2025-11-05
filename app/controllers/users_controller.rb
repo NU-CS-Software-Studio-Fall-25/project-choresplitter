@@ -1,13 +1,14 @@
 class UsersController < ApplicationController
-  skip_before_action :require_login, :require_authentication, only: [:new, :create], raise: false
+  require "nokogiri"
+  skip_before_action :require_login, :require_authentication, only: [ :new, :create ], raise: false
 
-  before_action :set_user, only: [:show, :edit, :update, :destroy]
-  before_action :ensure_self_or_admin, only: [:show, :edit, :update, :destroy]
+  before_action :set_user, only: [ :show, :edit, :update, :destroy ]
+  before_action :ensure_self_or_admin, only: [ :show, :edit, :update, :destroy ]
 
   def index
     # Consider restricting to admins if you don’t want a public user list:
     @users = User.order(created_at: :desc)
-    @chore_groups = current_user.chore_groups
+    @pagy, @chore_groups = pagy(:offset, current_user.chore_groups, limit: 5)
   end
 
   def show
