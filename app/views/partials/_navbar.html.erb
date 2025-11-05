@@ -12,44 +12,54 @@
             <!-- Divider -->
             <hr class="sidebar-divider my-0">
 
-            <!-- Nav Item - Dashboard -->
-            <li class="nav-item active">
-                <%= link_to users_path, class: "nav-link" do %>
-                    <i class="fas fa-fw fa-tachometer-alt"></i>
-                    <span>Dashboard</span>
-                <% end %>
-
-               
-                <%# <%= link_to ('<i class="fas fa-fw fa-tachometer-alt"></i><span>Dashboard</span>').html_safe, users_path%> 
-            </li>
-
-            <!-- Divider -->
-            <hr class="sidebar-divider">
-
-            <!-- Heading -->
-            <div class="sidebar-heading">
-                Manage Groups
-            </div>
-            
-             <!-- Create Group -->
-            <li class="nav-item active">
-                <%= link_to new_chore_group_chore_groups_path, class: "nav-link" do %>
-                    <i class="fas fa-regular fa-square-plus" style="color: #ffffff;"></i>
-                    <span>Create Group</span>
-                <% end %>
-            </li>
-            <!-- Join Group -->
-            <li class="nav-item active">
-                <%= link_to join_chore_groups_path, class: "nav-link" do %>
-                    <i class="fas fa-solid fa-right-to-bracket" style="color: #ffffff;"></i>
-                    <span>Join Group</span>
-                <% end %>
-              </li>
-
-            <!-- Divider -->
-            <hr class="sidebar-divider">
-
             <% if user_signed_in? %>
+                <!-- Nav Item - Dashboard -->
+                <li class="nav-item active">
+                    <%= link_to users_path, class: "nav-link" do %>
+                        <i class="fas fa-fw fa-tachometer-alt"></i>
+                        <span>Dashboard</span>
+                    <% end %>
+
+                
+                    <%# <%= link_to ('<i class="fas fa-fw fa-tachometer-alt"></i><span>Dashboard</span>').html_safe, users_path%> 
+                </li>
+
+                <!-- Divider -->
+                <hr class="sidebar-divider">
+
+                <!-- Heading -->
+                <div class="sidebar-heading"; font-size: 1.5625rem;>
+                    Manage Groups
+                </div>
+                
+                <!-- Create Group -->
+                <li class="nav-item active">
+                    <%= link_to new_chore_group_chore_groups_path, class: "nav-link" do %>
+                        
+                        <%# FIX: Use 'far' (Regular) OR 'fas' (Solid), not both %>
+                        <i class="far fa-square-plus" style="color: #ffffff;"></i>
+                        
+                        <%# (This is the solid version) %>
+                        <%# <i class="fas fa-square-plus" style="color: #ffffff;"></i> %>
+
+                        <span>Create Group</span>
+                    <% end %>
+                </li>
+                
+                <!-- Join Group -->
+                <li class="nav-item active">
+                    <%= link_to join_chore_groups_path, class: "nav-link" do %>
+                        
+                        <%# FIX: Removed the redundant 'fa-solid' class %>
+                        <i class="fas fa-right-to-bracket" style="color: #ffffff;"></i>
+                        
+                        <span>Join Group</span>
+                    <% end %>
+                </li>
+
+                <!-- Divider -->
+                <hr class="sidebar-divider">
+
                 <li class="nav-item active">
                     <%= link_to session_path, class: "nav-link", data: { turbo_method: :delete } do %>
                         <i class="fas fa-solid fa-sign-out-alt" style="color: #ffffff;"></i>

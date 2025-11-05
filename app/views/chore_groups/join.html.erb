@@ -6,9 +6,9 @@
 
   <%= form_with url: search_chore_groups_path, method: :post, data: { turbo: false } do %>
     <div style="margin-bottom: 16px;">
-      <label style="display:block; font-weight:600; margin-bottom:6px;">Chore Group ID</label>
+      <label style="display:block; font-weight:600; margin-bottom:6px; font-size:1.5625rem;">Chore Group ID</label>
       <%= number_field_tag :search_id, nil, min: 1, placeholder: "Enter Chore Group ID",
-            style: "width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; font-size: 16px;" %>
+            style: "width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; font-size: 1.5625rem;" %>
     </div>
     <div>
       <%= submit_tag "Join",
