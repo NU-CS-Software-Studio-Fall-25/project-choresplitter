@@ -37,8 +37,8 @@ users = first_names.map do |name|
   User.create!(
     # The email is generated directly from the simple name
     email_address: "#{name}@example.com",
-    password: "password",
-    password_confirmation: "password"
+    password: "90!PassWord!90",
+    password_confirmation: "90!PassWord!90"
   )
 end
 
