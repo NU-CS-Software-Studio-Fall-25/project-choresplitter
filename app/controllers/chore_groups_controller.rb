@@ -53,7 +53,7 @@ class ChoreGroupsController < ApplicationController
           points: 0,
           name: admin_name
       )
-      @chore_group.bill.create!(
+      @chore_group.bills.create!(
         member: membership,
         total_amount: 0,
         description: "Initial bill"

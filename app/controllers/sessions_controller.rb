@@ -33,6 +33,11 @@ class SessionsController < ApplicationController
   end
 
   def destroy
+    Current.session&.destroy if Current.respond_to?(:session)
+    cookies.delete(:session_token) # or whatever cookie you set in start_new_session_for
+    # clear request-local Current
+    Current.user = nil if defined?(Current)
+    Current.session = nil if defined?(Current) && Current.respond_to?(:session)
     reset_session
     redirect_to new_session_path, notice: "Signed out."
   end
