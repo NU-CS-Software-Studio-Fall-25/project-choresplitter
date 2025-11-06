@@ -25,44 +25,68 @@
   <% end %>
 
   <h3 style="margin-top:24px;">Bills</h3>
+  <%
+    current_member =
+      if defined?(Current) && Current&.user
+        @chore_group.members.find_by(user_id: Current.user.id)
+      end
+    current_member ||= @chore_group.members.first
+    bills_in_group = @chore_group.bills.includes(:member, bill_shares: :member)
+    bills_you_paid = current_member ? bills_in_group.where(member_id: current_member.id) : Bill.none
+    your_shares = if current_member
+                    BillShare.joins(:bill)
+                              .where(member_id: current_member.id, bills: { chore_group_id: @chore_group.id })
+                  else
+                    BillShare.none
+                  end
 
-  <% if @chore_group.bill.any? %>
-    <div style="display:flex; flex-direction:column; gap:16px;">
-        <% @chore_group.bill.each do |bill| %>
-        <div style="border:1px solid #666; border-radius:8px; padding:12px;">
-            <!-- Bill header (customize fields as needed) -->
-            <div style="display:flex; justify-content:space-between; align-items:center;">
-            <div>
-                <strong>Bill #<%= bill.id %></strong>
-            </div>
-            </div>
+    total_you_paid = bills_you_paid.sum(:total_amount)
 
-            <!-- BillShares list -->
-            <div style="margin-top:10px;">
-            <h4 style="margin:0 0 8px;">Shares</h4>
-            <% if bill.bill_shares.any? %>
-                <div style="display:flex; flex-direction:column; gap:8px;">
-                <%= render partial: "bill_shares/bill_share",
-                            collection: bill.bill_shares,
-                            as: :bill_share %>
-                </div>
-            <% else %>
-                <p style="color:#666; margin:0;">No shares yet.</p>
-            <% end %>
-            </div>
+    you_are_creditor_unpaid = BillShare
+      .joins(:bill)
+      .where(bills: { chore_group_id: @chore_group.id, member_id: current_member&.id })
+      .where(status: 'unpaid')
+      .where.not(member_id: current_member&.id)
+      .sum(:amount)
 
-            <!-- New BillShare form (uses your _form.html.erb) -->
-            <div style="margin-top:12px;">
-            <h5 style="margin:0 0 6px;">Add a share</h5>
-            <%= render partial: "bill_shares/form",
-                        locals: { bill_share: BillShare.new(bill_id: bill.id) } %>
-            </div>
-        </div>
-        <% end %>
+    you_owe_unpaid = BillShare
+      .joins(:bill)
+      .where(member_id: current_member&.id, status: 'unpaid', bills: { chore_group_id: @chore_group.id })
+      .where.not(bills: { member_id: current_member&.id })
+      .sum(:amount)
+  %>
+
+  <div style="display:flex; gap:16px; flex-wrap:wrap;">
+    <div style="flex:1 1 260px; border:1px solid #e5e7eb; border-radius:8px; padding:16px;">
+      <div style="font-size:12px; color:#6b7280; text-transform:uppercase; letter-spacing:.04em;">You Paid (Total)</div>
+      <div style="font-size:22px; font-weight:700; margin-top:6px;">
+        <%= number_to_currency(total_you_paid || 0) %>
+      </div>
     </div>
-    <% else %>
-    <p>No bills yet.</p>
-  <% end %>
+
+    <div style="flex:1 1 260px; border:1px solid #e5e7eb; border-radius:8px; padding:16px;">
+      <div style="font-size:12px; color:#6b7280; text-transform:uppercase; letter-spacing:.04em;">Others Owe You (Unpaid)</div>
+      <div style="font-size:22px; font-weight:700; margin-top:6px;">
+        <%= number_to_currency(you_are_creditor_unpaid || 0) %>
+      </div>
+    </div>
+
+    <div style="flex:1 1 260px; border:1px solid #e5e7eb; border-radius:8px; padding:16px;">
+      <div style="font-size:12px; color:#6b7280; text-transform:uppercase; letter-spacing:.04em;">You Owe (Unpaid)</div>
+      <div style="font-size:22px; font-weight:700; margin-top:6px;">
+        <%= number_to_currency(you_owe_unpaid || 0) %>
+      </div>
+    </div>
+  </div>
+
+<div style="margin-top:16px; display:flex; gap:12px;">
+  <%= link_to "Show details", chore_group_bills_path(@chore_group),
+        style: "padding:8px 12px; border:1px solid #2563eb; color:#fff; background:#2563eb; border-radius:6px; text-decoration:none; font-weight:600;" %>
+
+  <%= link_to "Create Bill", new_chore_group_bill_path(@chore_group),
+        style: "padding:8px 12px; border:1px solid #e5e7eb; color:#111827; background:#fff; border-radius:6px; text-decoration:none; font-weight:600;" %>
+</div>
+ 
 
   <div style="margin-top:24px;">
     <%= link_to "Back to groups", users_path,

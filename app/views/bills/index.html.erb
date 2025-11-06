@@ -1,7 +1,7 @@
 <%# app/views/bills/index.html.erb %>
 <% content_for :title, "Bills – Choresplitter" %>
 
-<div class="container-fluid">
+<div class="container-fluid" style="margin-top: 40px;">
   <!-- Page Heading -->
   <div class="d-sm-flex align-items-center justify-content-between mb-4">
     <h1 class="h3 text-gray-800 mb-0">
@@ -12,7 +12,7 @@
     </h1>
 
     <div>
-      <%= link_to "Create Bill", (defined?(new_bill_path) ? new_bill_path : "#"),
+      <%= link_to "Create Bill", (@chore_group ? new_chore_group_bill_path(@chore_group) : "#"),
           class: "d-none d-sm-inline-block btn btn-sm btn-primary shadow-sm" %>
     </div>
   </div>
@@ -94,7 +94,7 @@
                     </div>
                   </div>
                   <div>
-                    <%= link_to "Details", (defined?(bill_path) ? bill_path(bill) : "#"), class: "btn btn-sm btn-outline-secondary" %>
+                    <%= link_to "Details", bill_path(bill), class: "btn btn-sm btn-outline-secondary" %>
                   </div>
                 </div>
 
@@ -159,7 +159,7 @@
                     <% else %>
                       <span class="badge badge-success">Paid</span>
                     <% end %>
-                    <%= link_to "Details", (defined?(bill_path) ? bill_path(bill) : "#"), class: "btn btn-sm btn-outline-secondary ml-2" %>
+                    <%= link_to "Details", bill_path(bill), class: "btn btn-sm btn-outline-secondary" %>
                   </div>
                 </div>
               </div>
