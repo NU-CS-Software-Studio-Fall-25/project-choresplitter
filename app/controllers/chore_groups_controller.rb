@@ -5,7 +5,36 @@ class ChoreGroupsController < ApplicationController
     @chore_groups = ChoreGroup.includes(:users).order(created_at: :desc)
   end
 
-  def show; end
+  def show
+    @tab = params[:tab].presence_in(%w[overview my_tasks]) || "overview"
+
+    # Find this user's member record in the group (adjust if your association differs)
+    member = @chore_group.members.find_by(user_id: current_user.id)
+
+    scope =
+      if member
+        # All tasks in this chore group assigned to this member
+        Task
+          .joins(:task_group)
+          .where(task_group: { chore_group_id: @chore_group.id })
+          .where(member_id: member.id)
+      else
+        Task.none
+      end
+
+    @pagy_my, @my_tasks = pagy(
+      scope.order(created_at: :desc),
+      page_param: "my_tasks_page",
+      limit: 10
+    )
+
+    @pagy, @tasks = pagy(
+      :offset,
+      @chore_group.tasks.includes(:member),
+      page_param: "overview_tasks_page",
+      limit: 5
+    )
+  end
 
   def new_chore_group
     @chore_group = ChoreGroup.new
