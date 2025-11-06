@@ -96,7 +96,7 @@
   <form method="post" action="<%= polymorphic_path([task_group.chore_group, task_group, :tasks]) %>" style="padding:20px 24px;">
     <%= hidden_field_tag :authenticity_token, form_authenticity_token %>
 
-    <h3 style="margin:0 0 12px;">New Task</h3>
+    <h4 style="margin:0 0 12px;">New Task</h4>
 
     <label style="display:block; font-weight:600; margin:8px 0 4px;">Title</label>
     <input name="task[title]" required style="width:100%; padding:8px; border:1px solid #ddd; border-radius:6px;">
