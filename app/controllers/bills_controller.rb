@@ -5,56 +5,48 @@ class BillsController < ApplicationController
 
   # GET /bills
   def index
-    # @chore_group =
-    #   if params[:chore_group_id].present?
-    #     ChoreGroup.find_by(id: params[:chore_group_id])
-    #   elsif Current&.user
-    #     Current.user.members.includes(:chore_group).first&.chore_group
-    #   end
-    # @chore_group ||= ChoreGroup.first
-    # raise ActiveRecord::RecordNotFound, "No ChoreGroup found" unless @chore_group
-
-    # @current_member =
-    #   if Current&.user
-    #     @chore_group.members.find_by(user_id: Current.user.id)
-    #   end
-    # @current_member ||= @chore_group.members.first
-    # raise ActiveRecord::RecordNotFound, "No Member in this group" unless @current_member
-
-    @bills = Bill
+    bills_scope = Bill
       .where(chore_group_id: @chore_group.id)
-      .includes(:member, bill_shares: :member) 
+      .includes(:member, bill_shares: :member)
       .order(created_at: :desc)
 
-    @bills_you_paid = @bills.where(member_id: @current_member.id)
+    you_paid_scope = bills_scope.where(member_id: @current_member.id)
 
-    @your_shares = BillShare
+    your_shares_scope = BillShare
       .joins(:bill)
       .includes(bill: [:member, :chore_group])
       .where(member_id: @current_member.id, bills: { chore_group_id: @chore_group.id })
       .order('bills.created_at DESC')
 
+    @total_you_paid = you_paid_scope.sum(:total_amount)
 
-    @total_you_paid = @bills_you_paid.sum(:total_amount)
     @you_are_creditor_unpaid = BillShare
       .joins(:bill)
       .where(bills: { chore_group_id: @chore_group.id, member_id: @current_member.id })
       .where(status: 'unpaid')
       .where.not(member_id: @current_member.id)
       .sum(:amount)
+
     @you_owe_unpaid = BillShare
       .joins(:bill)
       .where(member_id: @current_member.id, status: 'unpaid', bills: { chore_group_id: @chore_group.id })
       .where.not(bills: { member_id: @current_member.id })
       .sum(:amount)
+
     involved_via_shares_count = BillShare
       .joins(:bill)
       .where(member_id: @current_member.id, bills: { chore_group_id: @chore_group.id })
       .select('DISTINCT bills.id')
       .count
+    @involved_count = you_paid_scope.count + involved_via_shares_count
 
-    @involved_count = @bills_you_paid.count + involved_via_shares_count
+    @pagy_paid,  @bills_you_paid = pagy(:offset, you_paid_scope,  items: 5, page_param: :page_paid)
+    @pagy_owed,  @your_shares    = pagy(:offset, your_shares_scope, items: 5, page_param: :page_owed)
+
+    # @pagy_paid, @bills_you_paid = pagy(:keyset, you_paid_scope.order(id: :desc),  items: 5, page_param: :page_paid)
+    # @pagy_owed, @your_shares    = pagy(:keyset, your_shares_scope.order('bills.id DESC'), items: 5, page_param: :page_owed)
   end
+
 
 
   # GET /bills/1
