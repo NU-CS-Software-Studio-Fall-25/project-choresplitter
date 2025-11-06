@@ -1,96 +1,203 @@
-<div style="color: #1e1e1eff; background:#fff; padding:20px 40px; border-radius:8px; box-shadow:0 4px 10px rgba(0,0,0,.1); width:80%; margin:40px auto;">
-  <h2 style="margin:0 0 12px;"><%= @chore_group.name %></h2>
-  <p><strong>Admin Name:</strong> <%= @chore_group.admin_name %></p>
+<div style="color:#1e1e1e; background:#fff; padding:20px 40px; border-radius:8px; box-shadow:0 4px 10px rgba(0,0,0,.1); width:80%; margin:40px auto;">
 
-    <% if @chore_group.respond_to?(:users) %>
-    <h3 style="margin-top:24px;">Members</h3>
-    <% if @chore_group.members.any? %>
-    <ul>
-        <% @chore_group.members.each do |m| %>
-        <li><%= m.name.presence || m.user&.email_address || "Member ##{m.id}" %></li>
-        <% end %>
-    </ul>
+  <!-- Top bar + tabs -->
+  <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;">
+    <div>
+      <h2 style="margin:0 0 6px;"><%= @chore_group.name %></h2>
+      <p style="margin:0;"><strong>Admin Name:</strong> <%= @chore_group.admin_name %></p>
+    </div>
+
+    <nav class="tabs" style="display:flex; gap:12px;">
+      <% base_params = request.query_parameters.except(:tab, :page, :my_tasks_page, :overview_page) %>
+
+      <%= link_to "Overview",
+          chore_group_path(@chore_group, base_params.merge(tab: "overview", overview_page: 1)),
+          class: "tab-link #{'is-active' if @tab=='overview'}",
+          data: { tab: "overview" },
+          "aria-current": (@tab=="overview" ? "page" : nil) %>
+
+      <%= link_to "My Tasks",
+          chore_group_path(@chore_group, base_params.merge(tab: "my_tasks", my_tasks_page: 1)),
+          class: "tab-link #{'is-active' if @tab=='my_tasks'}",
+          data: { tab: "my_tasks" },
+          "aria-current": (@tab=="my_tasks" ? "page" : nil) %>
+    </nav>
+  </div>
+
+  <!-- Only this region swaps via AJAX -->
+  <div id="tab-switchable">
+    <% if @tab == "my_tasks" %>
+      <%= render partial: "task_groups/member_tasks",
+                 locals: { tasks: @my_tasks, pagy: @pagy_my, chore_group: @chore_group } %>
     <% else %>
-    <p>No members yet.</p>
+      <% if @chore_group.respond_to?(:users) %>
+        <h3 style="margin-top:24px;">Members</h3>
+        <% if @chore_group.members.any? %>
+          <ul>
+            <% @chore_group.members.each do |m| %>
+              <li><%= m.name.presence || m.user&.email_address || "Member ##{m.id}" %></li>
+            <% end %>
+          </ul>
+        <% else %>
+          <p>No members yet.</p>
+        <% end %>
+      <% end %>
+
+      <h3 style="margin-top:24px;">Task Group</h3>
+      <% if @chore_group.task_groups.present? %>
+        <ul style="list-style:none; padding:0; margin:0;">
+          <%= render partial: "task_groups/card",
+                     collection: @chore_group.task_groups,
+                     as: :task_group %>
+        </ul>
+      <% else %>
+        <p>No task groups yet.</p>
+      <% end %>
+
+      <h3 style="margin-top:24px;">Bills</h3>
+      <%
+        current_member =
+          if defined?(Current) && Current&.user
+            @chore_group.members.find_by(user_id: Current.user.id)
+          end
+        current_member ||= @chore_group.members.first
+        bills_in_group = @chore_group.bills.includes(:member, bill_shares: :member)
+        bills_you_paid = current_member ? bills_in_group.where(member_id: current_member.id) : Bill.none
+        your_shares = if current_member
+                        BillShare.joins(:bill)
+                                  .where(member_id: current_member.id, bills: { chore_group_id: @chore_group.id })
+                      else
+                        BillShare.none
+                      end
+
+        total_you_paid = bills_you_paid.sum(:total_amount)
+
+        you_are_creditor_unpaid = BillShare
+          .joins(:bill)
+          .where(bills: { chore_group_id: @chore_group.id, member_id: current_member&.id })
+          .where(status: 'unpaid')
+          .where.not(member_id: current_member&.id)
+          .sum(:amount)
+
+        you_owe_unpaid = BillShare
+          .joins(:bill)
+          .where(member_id: current_member&.id, status: 'unpaid', bills: { chore_group_id: @chore_group.id })
+          .where.not(bills: { member_id: current_member&.id })
+          .sum(:amount)
+      %>
+
+      <div style="display:flex; gap:16px; flex-wrap:wrap;">
+        <div style="flex:1 1 260px; border:1px solid #e5e7eb; border-radius:8px; padding:16px;">
+          <div style="font-size:12px; color:#6b7280; text-transform:uppercase; letter-spacing:.04em;">You Paid (Total)</div>
+          <div style="font-size:22px; font-weight:700; margin-top:6px;">
+            <%= number_to_currency(total_you_paid || 0) %>
+          </div>
+        </div>
+
+        <div style="flex:1 1 260px; border:1px solid #e5e7eb; border-radius:8px; padding:16px;">
+          <div style="font-size:12px; color:#6b7280; text-transform:uppercase; letter-spacing:.04em;">Others Owe You (Unpaid)</div>
+          <div style="font-size:22px; font-weight:700; margin-top:6px;">
+            <%= number_to_currency(you_are_creditor_unpaid || 0) %>
+          </div>
+        </div>
+
+        <div style="flex:1 1 260px; border:1px solid #e5e7eb; border-radius:8px; padding:16px;">
+          <div style="font-size:12px; color:#6b7280; text-transform:uppercase; letter-spacing:.04em;">You Owe (Unpaid)</div>
+          <div style="font-size:22px; font-weight:700; margin-top:6px;">
+            <%= number_to_currency(you_owe_unpaid || 0) %>
+          </div>
+        </div>
+      </div>
+
+    <div style="margin-top:16px; display:flex; gap:12px;">
+      <%= link_to "Show details", chore_group_bills_path(@chore_group),
+            style: "padding:8px 12px; border:1px solid #2563eb; color:#fff; background:#2563eb; border-radius:6px; text-decoration:none; font-weight:600;" %>
+
+      <%= link_to "Create Bill", new_chore_group_bill_path(@chore_group),
+            style: "padding:8px 12px; border:1px solid #e5e7eb; color:#111827; background:#fff; border-radius:6px; text-decoration:none; font-weight:600;" %>
+    </div>
+
+      <div style="margin-top:24px;">
+        <%= link_to "Back to groups", users_path,
+              style: "padding:8px 12px; border:1px solid #ddd; border-radius:6px; text-decoration:none; background:#f5f5f5; color:#333; font-weight:600;" %>
+      </div>
     <% end %>
-  <% end %>
-
-  <h3 style="margin-top:24px;">Task Groups</h3>
-  <% if @chore_group.task_groups.present? %>
-    <ul style="list-style:none; padding:0; margin:0;">
-      <%= render partial: "task_groups/card", collection: @chore_group.task_groups, as: :task_group %>
-    </ul>
-  <% else %>
-    <p>No task groups yet.</p>
-  <% end %>
-
-  <h3 style="margin-top:24px;">Bills</h3>
-  <%
-    current_member =
-      if defined?(Current) && Current&.user
-        @chore_group.members.find_by(user_id: Current.user.id)
-      end
-    current_member ||= @chore_group.members.first
-    bills_in_group = @chore_group.bills.includes(:member, bill_shares: :member)
-    bills_you_paid = current_member ? bills_in_group.where(member_id: current_member.id) : Bill.none
-    your_shares = if current_member
-                    BillShare.joins(:bill)
-                              .where(member_id: current_member.id, bills: { chore_group_id: @chore_group.id })
-                  else
-                    BillShare.none
-                  end
-
-    total_you_paid = bills_you_paid.sum(:total_amount)
-
-    you_are_creditor_unpaid = BillShare
-      .joins(:bill)
-      .where(bills: { chore_group_id: @chore_group.id, member_id: current_member&.id })
-      .where(status: 'unpaid')
-      .where.not(member_id: current_member&.id)
-      .sum(:amount)
-
-    you_owe_unpaid = BillShare
-      .joins(:bill)
-      .where(member_id: current_member&.id, status: 'unpaid', bills: { chore_group_id: @chore_group.id })
-      .where.not(bills: { member_id: current_member&.id })
-      .sum(:amount)
-  %>
-
-  <div style="display:flex; gap:16px; flex-wrap:wrap;">
-    <div style="flex:1 1 260px; border:1px solid #e5e7eb; border-radius:8px; padding:16px;">
-      <div style="font-size:12px; color:#6b7280; text-transform:uppercase; letter-spacing:.04em;">You Paid (Total)</div>
-      <div style="font-size:22px; font-weight:700; margin-top:6px;">
-        <%= number_to_currency(total_you_paid || 0) %>
-      </div>
-    </div>
-
-    <div style="flex:1 1 260px; border:1px solid #e5e7eb; border-radius:8px; padding:16px;">
-      <div style="font-size:12px; color:#6b7280; text-transform:uppercase; letter-spacing:.04em;">Others Owe You (Unpaid)</div>
-      <div style="font-size:22px; font-weight:700; margin-top:6px;">
-        <%= number_to_currency(you_are_creditor_unpaid || 0) %>
-      </div>
-    </div>
-
-    <div style="flex:1 1 260px; border:1px solid #e5e7eb; border-radius:8px; padding:16px;">
-      <div style="font-size:12px; color:#6b7280; text-transform:uppercase; letter-spacing:.04em;">You Owe (Unpaid)</div>
-      <div style="font-size:22px; font-weight:700; margin-top:6px;">
-        <%= number_to_currency(you_owe_unpaid || 0) %>
-      </div>
-    </div>
-  </div>
-
-<div style="margin-top:16px; display:flex; gap:12px;">
-  <%= link_to "Show details", chore_group_bills_path(@chore_group),
-        style: "padding:8px 12px; border:1px solid #2563eb; color:#fff; background:#2563eb; border-radius:6px; text-decoration:none; font-weight:600;" %>
-
-  <%= link_to "Create Bill", new_chore_group_bill_path(@chore_group),
-        style: "padding:8px 12px; border:1px solid #e5e7eb; color:#111827; background:#fff; border-radius:6px; text-decoration:none; font-weight:600;" %>
-</div>
- 
-
-  <div style="margin-top:24px;">
-    <%= link_to "Back to groups", users_path,
-          style: "padding:8px 12px; border:1px solid #ddd; border-radius:6px; text-decoration:none; background:#f5f5f5; color:#333; font-weight:600;" %>
   </div>
 </div>
 
+<script>
+(function(){
+  const root  = document.getElementById('tab-switchable');
+  const links = Array.from(document.querySelectorAll('a.tab-link')); // <-- define links
+  if (!root || !links.length) return;
+
+  function setActive(tab){
+    links.forEach(a => {
+      const is = (a.dataset.tab === tab);
+      a.classList.toggle('is-active', is);
+      if (is) a.setAttribute('aria-current','page'); else a.removeAttribute('aria-current');
+    });
+  }
+
+  function swapFrom(url, push=true){
+    root.style.opacity = '0.6';
+    fetch(url, { headers: { 'X-Requested-With':'XMLHttpRequest' } })
+      .then(r => r.text())
+      .then(html => {
+        const doc  = new DOMParser().parseFromString(html, 'text/html');
+        const next = doc.getElementById('tab-switchable');
+        if (next) root.innerHTML = next.innerHTML;
+        if (push) history.pushState({}, '', url);
+      })
+      .finally(() => {
+        root.style.opacity = '';
+        root.scrollIntoView({behavior:'smooth', block:'start'});
+      });
+  }
+
+  // Intercept tab clicks
+  document.addEventListener('click', function(e){
+    const a = e.target.closest('a.tab-link');
+    if (!a) return;
+    e.preventDefault();
+    const url = new URL(a.href, location.origin);
+    // reset stale page params and force page 1 for the chosen tab
+    url.searchParams.delete('page');
+    url.searchParams.delete('overview_page');
+    url.searchParams.delete('my_tasks_page');
+    const tab = a.dataset.tab || 'overview';
+    url.searchParams.set(tab === 'my_tasks' ? 'my_tasks_page' : 'overview_page', '1');
+
+    setActive(tab);                // <-- update highlight immediately
+    swapFrom(url.toString(), true);
+  });
+
+  // Intercept My Tasks pagination only
+  root.addEventListener('click', function(e){
+    const a = e.target.closest('a[href*="my_tasks_page="]');
+    if (!a) return;
+    e.preventDefault();
+    setActive('my_tasks');         // <-- keep highlight on my_tasks
+    swapFrom(a.href, true);
+  });
+
+  // Back/forward support
+  window.addEventListener('popstate', function(){
+    const params = new URL(location.href).searchParams;
+    const tab = params.get('tab') || 'overview';  // <-- define tab
+    setActive(tab);
+    swapFrom(location.href, false);
+  });
+})();
+</script>
+
+<style>
+/* Minimal styles so .is-active shows visually */
+a.tab-link{
+  padding:8px 12px; border:1px solid #ddd; border-radius:6px;
+  background:#f5f5f5; font-weight:600; text-decoration:none; color:#1e1e1e;
+}
+a.tab-link.is-active{
+  border-color:#1a73e8; background:#e8f0fe;
+}
+</style>
