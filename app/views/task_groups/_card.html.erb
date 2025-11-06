@@ -1,73 +1,83 @@
 <div style="border:1px solid #eee; border-radius:8px; padding:12px; margin-bottom:14px;">
 
   <h4 style="margin:12px 0 6px;">Tasks (<%= task_group.tasks.size %>)</h4>
-  <% if task_group.tasks.any? %>
-    <ul style="list-style:none; padding:0; margin:0;">
-      <% task_group.tasks.each do |t| %>
-        <li style="padding:8px 0; border-bottom:1px solid #f0f0f0; display:flex; justify-content:space-between; gap:12px;">
-          <div style="min-width:0;">
-            <div style="font-weight:600;"><%= t.title %></div>
-            <% if t.description.present? %>
-              <div style="color:#555; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"><%= t.description %></div>
-            <% end %>
-            <div style="font-size:12px; color:#777;">
-              Assigned to: <%= t.member&.try(:id) || t.member&.try(:email) || "Unassigned" %>
-              · <%= t.created_at.strftime("%Y-%m-%d") %>
+
+  <% if @tasks.any? %>
+    <!-- Only this region swaps via AJAX -->
+    <div id="tg-<%= task_group.id %>-ajax"
+         data-page-param="<%= local_assigns[:page_param] || 'page' %>">
+      <ul style="list-style:none; padding:0; margin:0;">
+        <% @tasks.each do |t| %>
+          <li style="padding:8px 0; border-bottom:1px solid #f0f0f0; display:flex; justify-content:space-between; gap:12px;">
+            <div style="min-width:0;">
+              <div style="font-weight:600;"><%= t.title %></div>
+              <% if t.description.present? %>
+                <div style="color:#555; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"><%= t.description %></div>
+              <% end %>
+              <div style="font-size:12px; color:#777;">
+                Assigned to: <%= t.member&.try(:name) || t.member&.try(:id) || t.member&.try(:email) || "Unassigned" %>
+                · <%= t.created_at.strftime("%Y-%m-%d") %>
+              </div>
             </div>
-          </div>
 
-          <div style="display:flex; align-items:center; gap:8px; flex-shrink:0;">
-            <!-- Assign button -->
-            <button type="button"
-                    onclick="document.getElementById('assign-task-dialog-<%= t.id %>').showModal()"
-                    style="padding:6px 10px; border:1px solid #ddd; border-radius:6px; background:#f5f5f5; font-weight:600;">
-              Assign
-            </button>
-
-            <!-- Delete (X) -->
-            <%= button_to "×",
-                  polymorphic_path([task_group.chore_group, task_group, t]),
-                  method: :delete,
-                  form: { style: "display:inline;" },
-                  data: { turbo_confirm: "Delete this task?" },
-                  style: "padding:6px 10px; border:1px solid #e57373; border-radius:6px; background:#ffecec; color:#b00020; font-weight:700;" %>
-          </div>
-        </li>
-
-        <!-- Assign dialog (one per task) -->
-        <dialog id="assign-task-dialog-<%= t.id %>" style="border:none; border-radius:10px; padding:0; box-shadow:0 10px 30px rgba(0,0,0,.2); width:min(520px,90vw); padding: 30px">
-          <%= form_with url: polymorphic_path([task_group.chore_group, task_group, t]),
-                        method: :patch,
-                        style: "padding:20px 24px;" do |f| %>
-            <h3 style="margin:0 0 12px;">Assign Task</h3>
-
-            <label style="display:block; font-weight:600; margin:8px 0 4px;">Member</label>
-            <%= select_tag "task[member_id]",
-                  options_for_select(
-                    [[ "Unassigned", nil ]] +
-                    task_group.chore_group.members.map { |m|
-                      [ (m.respond_to?(:name) ? m.name.presence : nil) || (m.respond_to?(:email) ? m.email : nil) || "Member ##{m.id}", m.id ]
-                    },
-                    selected: t.member_id
-                  ),
-                  include_blank: false,
-                  style: "width:100%; padding:8px; border:1px solid #ddd; border-radius:6px;" %>
-
-            <div style="display:flex; gap:8px; justify-content:flex-end; margin-top:16px;">
+            <div style="display:flex; align-items:center; gap:8px; flex-shrink:0;">
+              <!-- Assign button -->
               <button type="button"
-                      onclick="this.closest('dialog').close()"
-                      style="padding:8px 12px; border:1px solid #ddd; border-radius:6px; background:#fff;">
-                Cancel
+                      onclick="document.getElementById('assign-task-dialog-<%= t.id %>').showModal()"
+                      style="padding:6px 10px; border:1px solid #ddd; border-radius:6px; background:#f5f5f5; font-weight:600;">
+                Assign
               </button>
-              <button type="submit"
-                      style="padding:8px 12px; border:1px solid #1a73e8; border-radius:6px; background:#1a73e8; color:#fff; font-weight:600;">
-                Save
-              </button>
+
+              <!-- Delete (X) -->
+              <%= button_to "×",
+                    polymorphic_path([task_group.chore_group, task_group, t]),
+                    method: :delete,
+                    form: { style: "display:inline;" },
+                    data: { turbo_confirm: "Delete this task?" },
+                    style: "padding:6px 10px; border:1px solid #e57373; border-radius:6px; background:#ffecec; color:#b00020; font-weight:700;" %>
             </div>
-          <% end %>
-        </dialog>
-      <% end %>
-    </ul>
+          </li>
+
+          <!-- Assign dialog (one per task) -->
+          <dialog id="assign-task-dialog-<%= t.id %>" style="border:none; border-radius:10px; padding:0; box-shadow:0 10px 30px rgba(0,0,0,.2); width:min(520px,90vw); padding: 30px">
+            <%= form_with url: polymorphic_path([task_group.chore_group, task_group, t]),
+                          method: :patch,
+                          style: "padding:20px 24px;" do |f| %>
+              <h3 style="margin:0 0 12px;">Assign Task</h3>
+
+              <label style="display:block; font-weight:600; margin:8px 0 4px;">Member</label>
+              <%= select_tag "task[member_id]",
+                    options_for_select(
+                      [[ "Unassigned", nil ]] +
+                      task_group.chore_group.members.map { |m|
+                        [ (m.respond_to?(:name) ? m.name.presence : nil) || (m.respond_to?(:email) ? m.email : nil) || "Member ##{m.id}", m.id ]
+                      },
+                      selected: t.member_id
+                    ),
+                    include_blank: false,
+                    style: "width:100%; padding:8px; border:1px solid #ddd; border-radius:6px;" %>
+
+              <div style="display:flex; gap:8px; justify-content:flex-end; margin-top:16px;">
+                <button type="button"
+                        onclick="this.closest('dialog').close()"
+                        style="padding:8px 12px; border:1px solid #ddd; border-radius:6px; background:#fff;">
+                  Cancel
+                </button>
+                <button type="submit"
+                        style="padding:8px 12px; border:1px solid #1a73e8; border-radius:6px; background:#1a73e8; color:#fff; font-weight:600;">
+                  Save
+                </button>
+              </div>
+            <% end %>
+          </dialog>
+        <% end %>
+      </ul>
+
+      <!-- Pagy nav -->
+      <div style="margin-top:10px;">
+        <%=  @pagy.series_nav(:bootstrap).html_safe%>
+      </div>
+    </div>
   <% else %>
     <p style="color:#666; margin:6px 0 0;">No tasks yet.</p>
   <% end %>
@@ -94,8 +104,6 @@
     <label style="display:block; font-weight:600; margin:12px 0 4px;">Description</label>
     <textarea name="task[description]" rows="4" style="width:100%; padding:8px; border:1px solid #ddd; border-radius:6px;"></textarea>
 
-    <!-- member omitted => Unassigned -->
-
     <div style="display:flex; gap:8px; justify-content:flex-end; margin-top:16px;">
       <button type="button" onclick="this.closest('dialog').close()"
               style="padding:8px 12px; border:1px solid #ddd; border-radius:6px; background:#fff;">
@@ -108,3 +116,36 @@
     </div>
   </form>
 </dialog>
+
+<!-- Tiny JS: AJAX paginate this card only -->
+<script>
+(function(){
+  const box = document.getElementById('tg-<%= task_group.id %>-ajax');
+  if (!box) return;
+  const pageParam = box.dataset.pageParam || 'page';
+
+  function swap(url){
+    box.style.opacity='0.6';
+    fetch(url, { headers: { 'X-Requested-With':'XMLHttpRequest' }})
+      .then(r=>r.text())
+      .then(html=>{
+        const doc = new DOMParser().parseFromString(html, 'text/html');
+        const next = doc.getElementById('tg-<%= task_group.id %>-ajax');
+        if (next) box.innerHTML = next.innerHTML;
+        box.style.opacity='';
+        box.scrollIntoView({behavior:'smooth', block:'start'});
+      })
+      .catch(()=>{ box.style.opacity=''; });
+  }
+
+  box.addEventListener('click', function(e){
+    const a = e.target.closest('a');
+    if (!a) return;
+    const href = a.getAttribute('href') || '';
+    if (href.includes(pageParam + '=')) {
+      e.preventDefault();
+      swap(a.href);
+    }
+  });
+})();
+</script>

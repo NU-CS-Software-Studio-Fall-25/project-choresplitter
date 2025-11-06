@@ -1,32 +1,120 @@
 <div id="content" class="p-5">
-  <h2 style="color: #000000ff; border-bottom: 1px solid #757575ff; padding-bottom: 15px; margin-top: 10px;">
+  <h2 style="color:#000; border-bottom:1px solid #757575ff; padding-bottom:15px; margin-top:10px;">
     My Chore Groups
   </h2>
 
   <% if @chore_groups.any? %>
-    <ul style="list-style-type: none; margin: 0; padding: 0;">
-      <% @chore_groups.each do |group| %>
-        <li style="padding: 15px 5px; border-bottom: 1px solid #757575ff; display:flex; align-items:center; justify-content:space-between; gap:12px;">
-          <div>
-            <strong style="color: #000000ff; display: inline-block; width: 105px;">Group Name:</strong> <%= group.name %><br>
-            <strong style="color: #000000ff; display: inline-block; width: 105px;">Admin Name:</strong> <%= group.admin_name %>
-          </div>
+    <!-- Only this wrapper swaps during AJAX pagination -->
+    <div id="groups-ajax" data-page-param="<%= 'groups_page' %>">
+      <ul id="groups-list" style="list-style-type:none; margin:0; padding:0;">
+        <% @chore_groups.each do |group| %>
+          <li class="group-row"
+              tabindex="0"
+              data-name="<%= group.name.downcase %>"
+              data-admin="<%= group.admin_name.to_s.downcase %>"
+              style="padding:15px 5px; border-bottom:1px solid #757575ff; display:flex; align-items:center; justify-content:space-between; gap:12px;">
+            <div>
+              <strong style="color:#000; display:inline-block; width:105px;">Group Name:</strong> <%= group.name %><br>
+              <strong style="color:#000; display:inline-block; width:105px;">Admin Name:</strong> <%= group.admin_name %>
+            </div>
 
-          <%= link_to "View group", chore_group_path(group),
+            <%= link_to "View group",
+                chore_group_path(group),
+                class: "view-link",
                 style: "padding:8px 12px; border:1px solid #9d9d9dff; border-radius:6px; text-decoration:none; background:#f5f5f5; color:#333; font-weight:600;" %>
-        </li>
-      <% end %>
-    </ul>
-    <div class="py-4">
-       <%=  @pagy.series_nav(:bootstrap).html_safe%>
-    <div>
+          </li>
+        <% end %>
+      </ul>
+
+      <div class="py-4">
+        <%= @pagy.series_nav(:bootstrap).html_safe %>
+      </div>
+    </div>
   <% else %>
-    <p style="color: #000000ff; background-color: #f9f9f9; padding: 20px; text-align: center; border-radius: 4px;">
+    <p style="color:#000; background-color:#f9f9f9; padding:20px; text-align:center; border-radius:4px;">
       This user is not in any chore groups yet.
     </p>
-     <div class="py-4">
-       <%=  @pagy.series_nav(:bootstrap).html_safe%>
-    <div>
+    <div class="py-4">
+      <%= @pagy.series_nav(:bootstrap).html_safe %>
+    </div>
   <% end %>
-
 </div>
+
+<script>
+(function(){
+  const wrapper = document.getElementById('groups-ajax');
+  const filter  = document.getElementById('group-filter');
+
+  // --- client-side filter ---
+  function applyFilter() {
+    if (!filter) return;
+    const q = filter.value.trim().toLowerCase();
+    document.querySelectorAll('#groups-list .group-row').forEach(li => {
+      const hit = li.dataset.name.includes(q) || li.dataset.admin.includes(q);
+      li.style.display = hit ? '' : 'none';
+    });
+  }
+  if (filter) {
+    filter.addEventListener('input', applyFilter);
+  }
+
+  // --- row click & keyboard (Enter opens link) ---
+  document.addEventListener('click', (e) => {
+    const row = e.target.closest('.group-row');
+    if (!row) return;
+    const link = row.querySelector('.view-link');
+    if (link && e.target !== link && !e.target.closest('.view-link')) {
+      link.click();
+    }
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key !== 'Enter') return;
+    const row = e.target.closest('.group-row');
+    if (!row) return;
+    const link = row.querySelector('.view-link');
+    if (link) link.click();
+  });
+
+  // AJAX pagination 
+  if (!wrapper) return;
+  const pageParam = wrapper.dataset.pageParam || 'page';
+
+  function swap(url){
+    wrapper.style.opacity = '0.6';
+    fetch(url, { headers: { 'X-Requested-With':'XMLHttpRequest' }})
+      .then(r => r.text())
+      .then(html => {
+        const doc  = new DOMParser().parseFromString(html, 'text/html');
+        const next = doc.getElementById('groups-ajax');
+        if (next) { wrapper.innerHTML = next.innerHTML; }
+      })
+      .finally(() => {
+        wrapper.style.opacity = '';
+        wrapper.scrollIntoView({behavior:'smooth', block:'start'});
+        // re-apply filter after swap (so current text still filters)
+        applyFilter();
+      });
+  }
+
+  wrapper.addEventListener('click', function(e){
+    const a = e.target.closest('a');
+    if (!a) return;
+    const href = a.getAttribute('href') || '';
+    if (href.includes(pageParam + '=') || href.match(/[?&]page=\d+/)) {
+      e.preventDefault();
+      swap(a.href);
+      history.pushState({}, '', a.href);
+    }
+  });
+
+  window.addEventListener('popstate', function(){
+    // if user hits back/forward, reload the list region
+    swap(location.href);
+  });
+})();
+</script>
+
+<style>
+.group-row:focus { outline: 2px solid #1a73e8; border-radius:6px; }
+.group-row:hover { background:#fafafa; }
+</style>
