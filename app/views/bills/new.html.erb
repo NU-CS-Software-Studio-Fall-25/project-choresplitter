@@ -1,11 +1,14 @@
 <% content_for :title, "Create Bill – Choresplitter" %>
 
-<div class="container-fluid">
+<div class="container-fluid" style="margin-top: 40px;">
   <div class="row">
     <div class="col-lg-8">
       <div class="card shadow mb-4">
         <div class="card-header py-3 d-flex justify-content-between align-items-center">
           <h6 class="m-0 font-weight-bold text-primary">Bill Details</h6>
+          <div>
+            <%= link_to "← Back to Index", chore_group_bills_path(@chore_group), class: "btn btn-sm btn-outline-secondary" %>
+          </div>
         </div>
         <div class="card-body">
           <%= render "bills/form",

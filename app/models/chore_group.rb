@@ -7,8 +7,8 @@ class ChoreGroup < ApplicationRecord
   has_many :task_groups, dependent: :destroy
   has_many :tasks, through: :task_groups
 
-  has_many :bill, dependent: :destroy
-  has_many :bill_share, through: :bill
+  has_many :bills, dependent: :destroy
+  has_many :bill_shares, through: :bills
 
   validates :name, presence: true, uniqueness: { case_sensitive: false }
 end

@@ -1,4 +1,4 @@
-<%= form_with model: bill, local: true do |f| %>
+<%= form_with model: bill, url: (bill.persisted? ? bill_path(bill) : chore_group_bills_path(chore_group)), local: true do |f| %>
   <%= f.hidden_field :chore_group_id, value: chore_group.id %>
   <%= f.hidden_field :member_id, value: current_member.id %>
 
@@ -58,9 +58,11 @@
     </div>
   </div>
 
+  <% cancel_url = bill.persisted? ? bill_path(bill) : chore_group_bills_path(chore_group) %>
+
   <div class="d-flex">
-    <%= f.submit "Create Bill", class: "btn btn-primary mr-2" %>
-    <%= link_to "Cancel", bills_path, class: "btn btn-light" %>
+    <%= f.submit (bill.persisted? ? "Save Changes" : "Create Bill"),
+          class: "btn btn-primary mr-2" %>
   </div>
 <% end %>
 

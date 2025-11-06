@@ -1,12 +1,24 @@
-<% content_for :title, "Editing bill" %>
+<% content_for :title, "Edit Bill – Choresplitter" %>
 
-<h1>Editing bill</h1>
+<div class="container-fluid" style="padding-top: 40px;">
+  <div class="row">
+    <div class="col-lg-8">
+      <div class="card shadow mb-4">
+        <div class="card-header py-3 d-flex justify-content-between align-items-center">
+          <h6 class="m-0 font-weight-bold text-primary">Edit Bill</h6>
+          <div>
+            <%= link_to "← Back to Detail", bill_path(@bill), class: "btn btn-sm btn-outline-secondary" %>
+          </div>
+        </div>
 
-<%= render "form", bill: @bill %>
-
-<br>
-
-<div>
-  <%= link_to "Show this bill", @bill %> |
-  <%= link_to "Back to bills", bills_path %>
+        <div class="card-body">
+          <%= render "bills/form",
+              bill: @bill,
+              chore_group: @chore_group,
+              current_member: @current_member,
+              members_for_split: @members_for_split %>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>

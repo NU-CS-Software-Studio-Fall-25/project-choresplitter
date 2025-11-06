@@ -1,10 +1,90 @@
-<p style="color: green"><%= notice %></p>
+<% content_for :title, "Bill Details – Choresplitter" %>
 
-<%= render @bill %>
+<div class="container-fluid" style="padding-top: 40px;">
+  <div class="row">
+    <div class="col-lg-8">
+      <div class="card shadow mb-4">
+        <div class="card-header py-3">
+          <h6 class="m-0 font-weight-bold text-primary">Bill Details</h6>
+        </div>
 
-<div>
-  <%= link_to "Edit this bill", edit_bill_path(@bill) %> |
-  <%= link_to "Back to bills", bills_path %>
+        <div class="card-body">
+          <div class="mb-3">
+            <div class="text-muted small">Description</div>
+            <div class="h5 mb-0"><%= @bill.description.presence || "-" %></div>
+          </div>
 
-  <%= button_to "Destroy this bill", @bill, method: :delete %>
+          <div class="row">
+            <div class="col-md-4 mb-3">
+              <div class="text-muted small">Total Amount</div>
+              <div class="h5 mb-0"><%= number_to_currency(@bill.total_amount || 0) %></div>
+            </div>
+            <div class="col-md-4 mb-3">
+              <div class="text-muted small">Payer</div>
+              <div class="h6 mb-0">
+                <%= @bill.member&.user&.email_address || "Member##{@bill.member_id}" %>
+              </div>
+            </div>
+            <div class="col-md-4 mb-3">
+              <div class="text-muted small">Created At</div>
+              <div class="h6 mb-0"><%= l(@bill.created_at, format: :short) rescue @bill.created_at.to_s %></div>
+            </div>
+          </div>
+
+          <hr>
+
+          <div class="mb-2 d-flex align-items-center justify-content-between">
+            <h6 class="m-0 font-weight-bold text-primary">Shares</h6>
+            <span class="small text-muted">
+              Group: <%= @bill.chore_group&.name %>
+            </span>
+          </div>
+
+          <% if @bill.bill_shares.any? %>
+            <div class="table-responsive">
+              <table class="table table-sm">
+                <thead>
+                  <tr>
+                    <th>Member</th>
+                    <th class="text-right">Amount</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% @bill.bill_shares.each do |s| %>
+                    <tr>
+                      <td><%= s.member&.user&.email_address || "Member##{s.member_id}" %></td>
+                      <td class="text-right"><%= number_to_currency(s.amount || 0) %></td>
+                      <td>
+                        <% if s.status == "paid" %>
+                          <span class="badge badge-success">Paid</span>
+                        <% else %>
+                          <span class="badge badge-warning">Unpaid</span>
+                        <% end %>
+                      </td>
+                    </tr>
+                  <% end %>
+                </tbody>
+              </table>
+            </div>
+          <% else %>
+            <div class="text-muted">No shares yet.</div>
+          <% end %>
+        </div>
+
+        <div class="card-footer d-flex justify-content-between">
+          <%= link_to "← Back to Bills", chore_group_bills_path(@bill.chore_group),
+                class: "btn btn-light" %>
+
+          <div>
+            <%= link_to "Edit", edit_bill_path(@bill), class: "btn btn-primary mr-2", aria: { label: "Edit bill: #{@bill.description}" } %>
+            <%= link_to "Delete", bill_path(@bill),
+                  data: { turbo_method: :delete, turbo_confirm: "Delete this bill?" },
+                  class: "btn btn-outline-danger",
+                  aria: { label: "Back to bills list" } %>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
