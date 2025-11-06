@@ -94,7 +94,10 @@
                     </div>
                   </div>
                   <div>
-                    <%= link_to "Details", bill_path(bill), class: "btn btn-sm btn-outline-secondary" %>
+                    <%#= link_to "Details", bill_path(bill), class: "btn btn-sm btn-outline-secondary" %>
+                    <%= link_to "Details", bill_path(bill),
+                      class: "btn btn-sm btn-outline-secondary",
+                      aria: { label: "View details for bill: #{bill.description}" } %>
                   </div>
                 </div>
 
