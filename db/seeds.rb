@@ -47,9 +47,11 @@ puts "Created #{users.count} users."
 # 2. Create chore groups with random admins.
 puts "Creating chore groups..."
 chore_groups = 100.times.map do
+  test_user = users.sample
   ChoreGroup.create!(
     name: Faker::Company.unique.name,
-    admin: users.sample # Assigns the full user object
+    admin: test_user, # Assigns the full user object
+    admin_name: test_user.email_address.split('@')[0].capitalize() # get admin name from user email
   )
 end
 puts "Created #{chore_groups.count} chore groups."
@@ -61,11 +63,11 @@ chore_groups.each do |group|
   users_to_add = users.reject { |user| user.id == group.admin_id }
 
   # Create the admin's own member record
-  Member.create!(user: group.admin, chore_group: group, role: 'admin')
+  Member.create!(user: group.admin, chore_group: group, role: 'admin', name: group.admin_name)
 
   # Create member records for 3 other random users
   users_to_add.sample(10).each do |user|
-    Member.create!(user: user, chore_group: group, role: 'member')
+    Member.create!(user: user, chore_group: group, role: 'member', name: Faker::Name.unique.first_name)
   end
 end
 puts "Memberships created."
@@ -80,7 +82,7 @@ task_group_names = []
 end
 
 chore_groups.each do |group|
-  task_group_names.sample(10).each do |name| # Add 10 random task groups to each chore group
+  task_group_names.sample(1).each do |name| # Add 1 random task group to each chore group
     TaskGroup.create!(chore_group: group)
   end
 end
