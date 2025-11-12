@@ -1,7 +1,7 @@
 class BillsController < ApplicationController
   # layout "sb_admin"
-  before_action :set_bill, only: [:show, :edit, :update, :destroy]
-  before_action :set_chore_group, only: [:index, :new, :create]
+  before_action :set_bill, only: [ :show, :edit, :update, :destroy ]
+  before_action :set_chore_group, only: [ :index, :new, :create ]
 
   # GET /bills
   def index
@@ -14,29 +14,29 @@ class BillsController < ApplicationController
 
     your_shares_scope = BillShare
       .joins(:bill)
-      .includes(bill: [:member, :chore_group])
+      .includes(bill: [ :member, :chore_group ])
       .where(member_id: @current_member.id, bills: { chore_group_id: @chore_group.id })
-      .order('bills.created_at DESC')
+      .order("bills.created_at DESC")
 
     @total_you_paid = you_paid_scope.sum(:total_amount)
 
     @you_are_creditor_unpaid = BillShare
       .joins(:bill)
       .where(bills: { chore_group_id: @chore_group.id, member_id: @current_member.id })
-      .where(status: 'unpaid')
+      .where(status: "unpaid")
       .where.not(member_id: @current_member.id)
       .sum(:amount)
 
     @you_owe_unpaid = BillShare
       .joins(:bill)
-      .where(member_id: @current_member.id, status: 'unpaid', bills: { chore_group_id: @chore_group.id })
+      .where(member_id: @current_member.id, status: "unpaid", bills: { chore_group_id: @chore_group.id })
       .where.not(bills: { member_id: @current_member.id })
       .sum(:amount)
 
     involved_via_shares_count = BillShare
       .joins(:bill)
       .where(member_id: @current_member.id, bills: { chore_group_id: @chore_group.id })
-      .select('DISTINCT bills.id')
+      .select("DISTINCT bills.id")
       .count
     @involved_count = you_paid_scope.count + involved_via_shares_count
 
@@ -78,7 +78,7 @@ class BillsController < ApplicationController
 
 
 
-  # POST /bills
+# POST /bills
 def create
   shared_member_ids = (params[:bill][:shared_member_ids] || []).reject(&:blank?).map(&:to_i)
   safe_params = bill_params.except(:shared_member_ids)
@@ -150,7 +150,7 @@ end
   def create_bill_shares_for_group(bill, selected_member_ids)
     return if selected_member_ids.nil?
 
-    selected_member_ids -= [bill.member_id] 
+    selected_member_ids -= [ bill.member_id ]
     members = Member.where(id: selected_member_ids)
     share_amount = (bill.total_amount / (members.size + 1)).round(2)
 
@@ -168,7 +168,7 @@ end
 
   def update_bill_shares(bill, selected_member_ids)
     # selected_member_ids = params[:bill][:shared_member_ids].reject(&:blank?).map(&:to_i)
-    selected_member_ids -= [bill.member_id] 
+    selected_member_ids -= [ bill.member_id ]
 
     existing_member_ids = bill.bill_shares.pluck(:member_id)
 
