@@ -14,16 +14,23 @@
       </ul>
     </div>
   <% end %>
+
   <%= form_with model: @chore_group, local: true do |form| %>
     <div style="margin-bottom: 20px;">
-      <%= form.label :name, "Group Name", style: "display: block; margin-bottom: 8px; color: #000000ff; font-weight: 500;" %><br>
+      
+      <%# --- MODIFIED LINE --- %>
+      <%= form.label :name, "Group Name", style: "display: block; margin-bottom: 8px; color: #000000ff; font-weight: 500; font-size: 1.5625rem;" %><br>
+      
       <%= form.text_field :name, required: true, 
             style: "width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; font-size: 16px;" %>
     </div>
 
     <div style="margin-bottom: 20px;">
-    <%= form.label :admin_name, "Your Name in Group", style: "display: block; margin-bottom: 8px; color: #000000ff; font-weight: 500;" %><br>
-    <%= form.text_field :admin_name, required: true, 
+      
+      <%# --- MODIFIED LINE --- %>
+      <%= form.label :admin_name, "Your Name in Group", style: "display: block; margin-bottom: 8px; color: #000000ff; font-weight: 500; font-size: ; font-size: 1.5625rem;;" %><br>
+      
+      <%= form.text_field :admin_name, required: true, 
             style: "width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; font-size: 16px;" %>
     </div>
 
