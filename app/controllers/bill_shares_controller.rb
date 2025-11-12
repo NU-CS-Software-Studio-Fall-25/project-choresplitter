@@ -1,13 +1,13 @@
 class BillSharesController < ApplicationController
-  before_action :set_bill_share, only: [:show, :edit, :update, :destroy]
+  before_action :set_bill_share, only: [ :show, :edit, :update, :destroy ]
 
   # GET /bill_shares
   def index
     @bill_shares = if params[:bill_id].present?
-                     BillShare.where(bill_id: params[:bill_id])
-                   else
-                     BillShare.all
-                   end
+      BillShare.where(bill_id: params[:bill_id])
+    else
+      BillShare.all
+    end
   end
 
   # GET /bill_shares/1

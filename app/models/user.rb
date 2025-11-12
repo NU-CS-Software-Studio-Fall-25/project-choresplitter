@@ -15,10 +15,10 @@ class User < ApplicationRecord
   /x
 
   # Add the validation
-  validates :password, 
-    format: { 
-      with: PASSWORD_REQUIREMENTS, 
-      message: "must be at least 8 characters long and include one uppercase letter and one special character" 
-    }, 
+  validates :password,
+    format: {
+      with: PASSWORD_REQUIREMENTS,
+      message: "must be at least 8 characters long and include one uppercase letter and one special character"
+    },
     if: -> { password.present? || password_confirmation.present? }
 end

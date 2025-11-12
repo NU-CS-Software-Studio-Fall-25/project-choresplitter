@@ -1,7 +1,7 @@
 class TasksController < ApplicationController
   before_action :set_chore_group
   before_action :set_task_group
-  before_action :set_task, only: [:update, :destroy]
+  before_action :set_task, only: [ :update, :destroy ]
 
   def create
     attrs = params.fetch(:task, {}).permit(:title, :description)

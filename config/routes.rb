@@ -20,8 +20,8 @@ Rails.application.routes.draw do
     resources :task_groups, only: [ :show ] do
       resources :tasks
     end
-    resources :bills, only: [:index, :new, :create], shallow: true do
-      resources :bill_shares, only: [:create, :update, :destroy], shallow: true
+    resources :bills, only: [ :index, :new, :create ], shallow: true do
+      resources :bill_shares, only: [ :create, :update, :destroy ], shallow: true
     end
     member do
       post   :join
@@ -34,14 +34,13 @@ Rails.application.routes.draw do
       post :join
       post :search
     end
-
   end
   resource :session, only: [ :new, :create, :destroy ]
   resource :password, only: [ :new, :create, :edit, :update ]
 
   resources :users
   resources :sessions, only: [ :new, :create, :destroy ]
-  resources :bills, only: [:show, :edit, :update, :destroy]
+  resources :bills, only: [ :show, :edit, :update, :destroy ]
   # resources :chore_groups
   resources :tasks
   # root "chore_groups#index"
