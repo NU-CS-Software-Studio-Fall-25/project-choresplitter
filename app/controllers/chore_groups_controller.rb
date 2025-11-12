@@ -30,7 +30,7 @@ class ChoreGroupsController < ApplicationController
 
     @pagy, @tasks = pagy(
       :offset,
-      @chore_group.tasks.includes(:member),
+      @chore_group.tasks.includes(:member).order(created_at: :desc),
       page_param: "overview_tasks_page",
       limit: 5
     )
