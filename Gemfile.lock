@@ -122,6 +122,10 @@ GEM
     cucumber-html-formatter (21.15.1)
       cucumber-messages (> 19, < 28)
     cucumber-messages (27.2.0)
+    cucumber-rails (4.0.0)
+      capybara (>= 3.25, < 4)
+      cucumber (>= 7, < 11)
+      railties (>= 6.1, < 9)
     cucumber-tag-expressions (8.0.0)
     database_cleaner-active_record (2.2.2)
       activerecord (>= 5.a)
@@ -437,7 +441,7 @@ DEPENDENCIES
   bootsnap
   brakeman
   capybara
-  cucumber
+  cucumber-rails
   database_cleaner-active_record
   debug
   faker
