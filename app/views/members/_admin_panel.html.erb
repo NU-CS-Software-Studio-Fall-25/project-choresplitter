@@ -1,0 +1,47 @@
+<!-- app/views/members/_admin_panel.html.erb -->
+<h3 style="margin-top:24px;">Manage Members</h3>
+
+<% if chore_group.members.any? %>
+  <table style="width:100%; border-collapse:collapse; margin-top:8px;">
+    <thead>
+      <tr>
+        <th style="text-align:left; padding:8px; border-bottom:1px solid #eee;">Name</th>
+        <th style="text-align:left; padding:8px; border-bottom:1px solid #eee;">Email</th>
+        <th style="text-align:left; padding:8px; border-bottom:1px solid #eee;">Role</th>
+        <th style="padding:8px; border-bottom:1px solid #eee;">Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% chore_group.members.includes(:user).each do |m| %>
+        <tr>
+          <td style="padding:8px; border-bottom:1px solid #f5f5f5;">
+            <%= m.name.presence || m.user&.email_address || "Member ##{m.id}" %>
+          </td>
+          <td style="padding:8px; border-bottom:1px solid #f5f5f5;">
+            <%= m.user&.email_address || "—" %>
+          </td>
+          <td style="padding:8px; border-bottom:1px solid #f5f5f5;">
+            <%= m.try(:role) || (m.user_id == chore_group.try(:admin_id) ? "admin" : "member") %>
+          </td>
+          <td style="padding:8px; border-bottom:1px solid #f5f5f5; text-align:center;">
+            <%# Prevent removing the admin or self %>
+            <% is_admin_member = (m.try(:role) == 'admin') || (m.user_id == chore_group.try(:admin_id)) %>
+            <% if is_admin_member %>
+              <span style="font-size:12px; color:#6b7280;">(admin)</span>
+            <% else %>
+              <%= button_to "Kick",
+                    chore_group_member_path(chore_group, m),
+                    method: :delete,
+                    form: { style: "display:inline" },
+                    data: { confirm: "Remove this member from the group?" },
+                    class: "kick-btn",
+                    params: { tab: "admin" } %>
+            <% end %>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+<% else %>
+  <p>No members yet.</p>
+<% end %>

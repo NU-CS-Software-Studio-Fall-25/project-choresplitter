@@ -34,6 +34,8 @@ Rails.application.routes.draw do
       post :join
       post :search
     end
+
+    resources :members, only: [:index, :destroy]
   end
   resource :session, only: [ :new, :create, :destroy ]
   resource :password, only: [ :new, :create, :edit, :update ]

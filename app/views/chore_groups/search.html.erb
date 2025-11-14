@@ -3,31 +3,37 @@
   <h2 style="color: #333; border-bottom: 1px solid #eee; padding-bottom: 15px; margin-top: 0; margin-bottom: 20px;">
     Found Chore Group
   </h2>
-  
+
   <p style="line-height: 1.6; color: #333; font-size: 16px;">
-    <strong style="color: #555; display: inline-block; width: 80px;">Name:</strong> <%= @found_group.name %><br>
-    <strong style="color: #555; display: inline-block; width: 80px;">ID:</strong> <%= @found_group.id %><br>
-    <strong style="color: #555; display: inline-block; width: 80px;">Admin:</strong> <%= @found_group.admin_name || "(none)" %>
+    <strong style="color: #555; display: inline-block; width: 90px;">Name:</strong>
+    <%= @found_group.name %><br>
+
+    <strong style="color: #555; display: inline-block; width: 90px;">Code:</strong>
+    <code style="padding:2px 6px; border:1px solid #e5e7eb; border-radius:4px; background:#f9fafb;">
+      <%= @found_group.code %>
+    </code><br>
+
+    <strong style="color: #555; display: inline-block; width: 90px;">Admin:</strong>
+    <%= @found_group.admin_name.presence || "(none)" %>
   </p>
 
   <div style="margin-top: 30px;">
-    <% if @found_group.users.exists?(current_user.id) %>
-      <em style="display: block; text-align: center; padding: 15px; background-color: #f8f9fa; border: 1px solid #dee2e6; color: #6c757d; border-radius: 4px; font-style: normal;">
+    <% if @found_group.members.exists?(user_id: current_user.id) %>
+      <em style="display:block; text-align:center; padding:15px; background-color:#f8f9fa; border:1px solid #dee2e6; color:#6c757d; border-radius:4px; font-style:normal;">
         You're already a member of this group.
       </em>
     <% else %>
-      <%# This form replaces button_to to allow for direct inline styling %>
-      <%= form_with url: join_chore_group_path(@found_group.id), method: :post do |form| %>
-          <div style="margin-bottom: 20px;">
+      <%= form_with url: join_chore_group_path(@found_group), method: :post, local: true do %>
+        <div style="margin-bottom: 20px;">
           <label style="display:block; font-weight:600; margin-bottom:6px;">Your Name</label>
           <%= text_field_tag :member_name, nil, placeholder: "e.g., John Doe",
                 style: "width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; font-size: 16px;" %>
-          </div>
+        </div>
 
-        <%= form.submit "Join this group", 
+        <%= submit_tag "Join this group",
               style: "width: 100%; padding: 12px; background-color: #28a745; color: white; border: none; border-radius: 4px; font-size: 16px; font-weight: bold; cursor: pointer;" %>
       <% end %>
     <% end %>
   </div>
-  
+
 </div>
