@@ -39,7 +39,9 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_19_185842) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.string "admin_name"
+    t.string "code", limit: 5
     t.index ["admin_id"], name: "index_chore_groups_on_admin_id"
+    t.index ["code"], name: "index_chore_groups_on_code", unique: true
   end
 
   create_table "members", force: :cascade do |t|
