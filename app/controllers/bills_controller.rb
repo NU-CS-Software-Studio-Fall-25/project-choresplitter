@@ -1,7 +1,8 @@
 class BillsController < ApplicationController
   # layout "sb_admin"
-  before_action :set_bill, only: [ :show, :edit, :update, :destroy ]
-  before_action :set_chore_group, only: [ :index, :new, :create ]
+  before_action :set_bill, only: [:show, :edit, :update, :destroy]
+  before_action :set_chore_group, only: [:index, :new, :create]
+  before_action :require_bill_owner, only: [:edit, :update]
 
   # GET /bills
   def index
@@ -130,21 +131,42 @@ end
 
   def set_bill
     @bill = Bill.includes(:member, bill_shares: :member).find(params[:id])
+    @chore_group = @bill.chore_group
+
+    unless Current&.user
+      redirect_to root_path, alert: "You must sign in to view this bill." and return
+    end
+
+    @current_member = @chore_group.members.find_by(user_id: Current.user.id)
+
+    unless @current_member
+      redirect_to root_path, alert: "You are not a member of this group." and return
+    end
   end
 
   def set_chore_group
     @chore_group = ChoreGroup.find(params[:chore_group_id])
-    @current_member = if Current&.user
-      @chore_group.members.find_by(user_id: Current.user.id)
+
+    unless Current&.user
+      redirect_to root_path, alert: "You must sign in to view this group." and return
     end
-    @current_member ||= @chore_group.members.first
-    raise ActiveRecord::RecordNotFound, "No Member in this group" unless @current_member
+
+    @current_member = @chore_group.members.find_by(user_id: Current.user.id)
+
+    unless @current_member
+      redirect_to root_path, alert: "You are not a member of this group." and return
+    end
   end
 
+  def require_bill_owner
+    unless @bill.member_id == @current_member.id
+      redirect_to bill_path(@bill), alert: "Only the bill creator can edit this bill."
+    end
+  end
 
-def bill_params
-  params.require(:bill).permit(:chore_group_id, :member_id, :total_amount, :description)
-end
+  def bill_params
+    params.require(:bill).permit(:chore_group_id, :member_id, :total_amount, :description)
+  end
 
 
   def create_bill_shares_for_group(bill, selected_member_ids)
