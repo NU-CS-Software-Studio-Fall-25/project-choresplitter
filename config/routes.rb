@@ -40,7 +40,7 @@ Rails.application.routes.draw do
 
   resources :users
   resources :sessions, only: [ :new, :create, :destroy ]
-  resources :bills, only: [ :show, :edit, :update, :destroy ]
+  resources :bills, only: [ :index, :show, :edit, :update, :destroy ]
   # resources :chore_groups
   resources :tasks
   # root "chore_groups#index"
