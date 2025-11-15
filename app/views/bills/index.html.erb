@@ -153,7 +153,7 @@
                     <span class="badge badge-warning">Unpaid</span>
                     <% unpaid_shares.each do |s| %>
                       <span class="badge badge-light">
-                        <%= s.member.user&.email_address || "Member##{s.member_id}" %>
+                        <%= s.member&.name || s.member.user&.email_address || "Member##{s.member_id}" %>
                         owes <%= number_to_currency(s.amount) %>
                       </span>
                     <% end %>
@@ -167,7 +167,7 @@
                     Paid:
                     <% paid_shares.each do |s| %>
                       <span class="badge badge-success">
-                        <%= s.member.user&.email_address || "Member##{s.member_id}" %> <%= number_to_currency(s.amount) %>
+                        <%= s.member&.name || s.member.user&.email_address || "Member##{s.member_id}" %> <%= number_to_currency(s.amount) %>
                       </span>
                     <% end %>
                   </div>
@@ -198,7 +198,7 @@
                   <div>
                     <strong><%= bill.description %></strong>
                     <div class="small text-muted">
-                      Payer: <%= bill.member.user&.email_address || "Member##{bill.member_id}" %>
+                      Payer: <%= bill.member&.name || bill.member.user&.email_address || "Member##{bill.member_id}" %>
                       · Your share: <%= number_to_currency(share.amount) %>
                       · <%= l(bill.created_at, format: :short) rescue bill.created_at.to_s %>
                     </div>

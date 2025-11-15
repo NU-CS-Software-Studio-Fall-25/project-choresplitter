@@ -22,7 +22,7 @@
             <div class="col-md-4 mb-3">
               <div class="text-muted small">Payer</div>
               <div class="h6 mb-0">
-                <%= @bill.member&.user&.email_address || "Member##{@bill.member_id}" %>
+                <%= @bill.member&.name || @bill.member&.user&.email_address || "Member##{@bill.member_id}" %>
               </div>
             </div>
             <div class="col-md-4 mb-3">
@@ -53,7 +53,7 @@
                 <tbody>
                   <% @bill.bill_shares.each do |s| %>
                     <tr>
-                      <td><%= s.member&.user&.email_address || "Member##{s.member_id}" %></td>
+                      <td><%= s.member&.name || s.member&.user&.email_address || "Member##{s.member_id}" %></td>
                       <td class="text-right"><%= number_to_currency(s.amount || 0) %></td>
                       <td>
                         <div class="d-flex align-items-center">

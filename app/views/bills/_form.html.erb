@@ -36,7 +36,7 @@
                   value="<%= mid %>"
                   <%= is_me ? 'disabled' : 'checked' %>>
                 <label class="custom-control-label" for="member_<%= mid %>">
-                  <%= m.user&.email_address || m.user&.name || "Member##{mid}" %>
+                  <%= m.name || m.user&.email_address || m.user&.name || "Member##{mid}" %>
                   <% if is_me %><span class="badge badge-light ml-1">you</span><% end %>
                 </label>
               </div>
