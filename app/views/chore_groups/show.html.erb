@@ -110,7 +110,7 @@
       </div>
 
     <div style="margin-top:16px; display:flex; gap:12px;">
-      <%= link_to "Show details", chore_group_bills_path(@chore_group),
+      <%= link_to "Show details", chore_group_bills_path(@chore_group, from: "group"),
             style: "padding:8px 12px; border:1px solid #2563eb; color:#fff; background:#2563eb; border-radius:6px; text-decoration:none; font-weight:600;" %>
 
       <%= link_to "Create Bill", new_chore_group_bill_path(@chore_group),

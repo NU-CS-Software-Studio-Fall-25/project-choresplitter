@@ -22,7 +22,7 @@
             <div class="col-md-4 mb-3">
               <div class="text-muted small">Payer</div>
               <div class="h6 mb-0">
-                <%= @bill.member&.user&.email_address || "Member##{@bill.member_id}" %>
+                <%= @bill.member&.name || @bill.member&.user&.email_address || "Member##{@bill.member_id}" %>
               </div>
             </div>
             <div class="col-md-4 mb-3">
@@ -53,14 +53,34 @@
                 <tbody>
                   <% @bill.bill_shares.each do |s| %>
                     <tr>
-                      <td><%= s.member&.user&.email_address || "Member##{s.member_id}" %></td>
+                      <td><%= s.member&.name || s.member&.user&.email_address || "Member##{s.member_id}" %></td>
                       <td class="text-right"><%= number_to_currency(s.amount || 0) %></td>
                       <td>
-                        <% if s.status == "paid" %>
-                          <span class="badge badge-success">Paid</span>
-                        <% else %>
-                          <span class="badge badge-warning">Unpaid</span>
-                        <% end %>
+                        <div class="d-flex align-items-center">
+                          <% if s.status == "paid" %>
+                            <span class="badge badge-success mr-2">Paid</span>
+
+                            <% if s.member_id == @current_member.id || @bill.member_id == @current_member.id %>
+                              <%= button_to "Mark as unpaid",
+                                    bill_share_path(s, bill_share: { status: "unpaid" }),
+                                    method: :patch,
+                                    form_class: "d-inline",
+                                    class: "btn btn-sm btn-outline-secondary" %>
+                            <% end %>
+
+                          <% else %>
+                            <span class="badge badge-warning mr-2">Unpaid</span>
+
+                            <% if s.member_id == @current_member.id || @bill.member_id == @current_member.id %>
+                              <%= button_to "Mark as paid",
+                                    bill_share_path(s, bill_share: { status: "paid" }),
+                                    method: :patch,
+                                    form_class: "d-inline",
+                                    class: "btn btn-sm btn-outline-primary" %>
+                            <% end %>
+
+                          <% end %>
+                        </div>
                       </td>
                     </tr>
                   <% end %>
@@ -77,11 +97,16 @@
                 class: "btn btn-light" %>
 
           <div>
-            <%= link_to "Edit", edit_bill_path(@bill), class: "btn btn-primary mr-2", aria: { label: "Edit bill: #{@bill.description}" } %>
-            <%= link_to "Delete", bill_path(@bill),
-                  data: { turbo_method: :delete, turbo_confirm: "Delete this bill?" },
-                  class: "btn btn-outline-danger",
-                  aria: { label: "Back to bills list" } %>
+            <% if @bill.member_id == @current_member.id %>
+              <%= link_to "Edit", edit_bill_path(@bill),
+                    class: "btn btn-primary mr-2",
+                    aria: { label: "Edit bill: #{@bill.description}" } %>
+
+              <%= link_to "Delete", bill_path(@bill),
+                    data: { turbo_method: :delete, turbo_confirm: "Delete this bill?" },
+                    class: "btn btn-outline-danger",
+                    aria: { label: "Back to bills list" } %>
+            <% end %>
           </div>
         </div>
       </div>
