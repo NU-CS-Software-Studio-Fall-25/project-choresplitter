@@ -89,6 +89,12 @@ p {
   margin-bottom: 1rem;
 }
 
+a.active{
+  background-color: #8895b9;
+    border-color: #acd2f7;
+    box-shadow: #6c6e7e 0px 2px;
+}
+
 abbr[title],
 abbr[data-original-title] {
   text-decoration: underline;

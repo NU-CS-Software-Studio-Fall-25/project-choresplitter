@@ -1,13 +1,18 @@
-<h2>All tasks</h2>
-<div class="d-flex flex-column">
-  <ul class="list-group">
-    <% @tasks.each do |t| %>
-      <li class="list-group-item"><%= t.title%></li> 
-      <li class="list-group-item"><%= t.description%></li> 
-      <li class="list-group-item"><%= t.member_id%></li> 
-      <li class="list-group-item"><%= t.task_group_id%></li> 
-      <li class="list-group-item"><%= t.created_at%></li> 
-      <li class="list-group-item"><%= t.updated_at%></li> 
-    <% end %>
-  </ul>
+<div style="padding: 5% 2%;
+    color: #343434;">
+  <h2 class="pb-3">My Tasks</h2>
+  <% @tasks.each do |task| %>
+    <div class="card mb-3 p-3 border-dark">
+      <h5><%= task.title %></h5>
+
+      <% if task.description.present? %>
+        <p><%= task.description %></p>
+      <% end %>
+
+      <small>
+        Group: 
+        <%= task.task_group.chore_group.name %><br>
+      </small>
+    </div>
+  <% end %>
 </div>

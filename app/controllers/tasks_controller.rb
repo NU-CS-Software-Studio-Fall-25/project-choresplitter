@@ -1,8 +1,17 @@
 class TasksController < ApplicationController
-  before_action :set_chore_group
-  before_action :set_task_group
+  before_action :set_chore_group, if: -> { params[:chore_group_id].present? }
+  before_action :set_task_group,  if: -> { params[:task_group_id].present? }
   before_action :set_task, only: [ :update, :destroy ]
 
+  def index
+    if params[:chore_group_id]
+      @chore_group = ChoreGroup.find(params[:chore_group_id])
+      @tasks = @chore_group.tasks
+    else
+      @tasks = Task.where(member_id: current_user.members.select(:id))
+    end
+    @tasks = @tasks.includes(task_group: :chore_group)
+  end
   def create
     attrs = params.fetch(:task, {}).permit(:title, :description)
     attrs[:title] = "New Task" if attrs[:title].blank?
