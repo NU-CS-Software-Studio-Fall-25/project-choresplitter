@@ -17,10 +17,16 @@ class SessionsController < ApplicationController
     user = User.find_by(email_address: email)
 
     if user&.authenticate(password) # requires has_secure_password + password_digest
-      reset_session               # prevents session fixation
-      session[:user_id] = user.id
-      start_new_session_for(user) 
-      redirect_to users_path, notice: "Signed in!"
+      if user.email_verified? # <-- CHECK VERIFICATION
+        reset_session          
+        session[:user_id] = user.id
+        start_new_session_for(user)  
+        redirect_to users_path, notice: "Signed in!"
+      else
+        # Password is correct, but email is not verified
+        flash.now[:alert] = "You must verify your email address before signing in. Please check your inbox."
+        render :new, status: :unprocessable_entity
+      end
     else
       flash.now[:alert] = "Try another email address or password."
       render :new, status: :unprocessable_entity

@@ -22,7 +22,11 @@ class UsersController < ApplicationController
   def create
     @user = User.new(user_params)
     if @user.save
-      redirect_to @user, notice: "User created."
+      # Send the verification email
+      UserMailer.verification(@user).deliver_later
+      
+      # Redirect to the sign-in page with a notice
+      redirect_to new_session_path, notice: "User created. Please check your email to verify your account."
     else
       render :new, status: :unprocessable_entity
     end
