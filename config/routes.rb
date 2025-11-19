@@ -17,6 +17,11 @@ Rails.application.routes.draw do
   get "dashboard-template" => "templates#index"
   get "about" => "about#index"
   get "home", to: "home#index"
+
+  post '/auth/:provider/callback', to: 'omniauth_callbacks#create'
+  get '/auth/:provider/callback', to: 'omniauth_callbacks#create'
+  get '/auth/failure', to: 'omniauth_callbacks#failure'
+  
   resources :chore_groups do
     resources :task_groups, only: [ :show ] do
       resources :tasks
