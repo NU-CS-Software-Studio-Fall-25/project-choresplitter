@@ -6,7 +6,7 @@ class TaskGroupsController < ApplicationController
 
   private
   def set_chore_group
-    @chore_group = ChoreGroup.find(params[:chore_group_id])
+    @chore_group = ChoreGroup.find_by!(code: params[:chore_group_id])
   end
 
   def set_task_group

@@ -5,10 +5,10 @@ class BillsController < ApplicationController
   before_action :set_chore_group, only: [:new, :create]
   before_action :require_bill_owner, only: [:edit, :update]
 
-
   # GET /bills
   def index
     if @chore_group.present? && @current_member.present?
+      # Bills within a single group where you're a member
       bills_scope = Bill
         .where(chore_group_id: @chore_group.id)
         .includes(:member, bill_shares: :member)
@@ -46,6 +46,7 @@ class BillsController < ApplicationController
       @involved_count = you_paid_scope.count + involved_via_shares_count
 
     else
+      # Global "My Bills" across all groups
       my_member_ids = Current.user.members.pluck(:id)
 
       bills_scope = Bill
@@ -85,55 +86,37 @@ class BillsController < ApplicationController
     @pagy_owed, @your_shares    = pagy(:offset, your_shares_scope, items: 5, page_param: :page_owed)
   end
 
-
-
-
   # GET /bills/1
   def show; end
 
   # GET /bills/new
   def new
-    @chore_group =
-      if params[:chore_group_id].present?
-        ChoreGroup.find_by(id: params[:chore_group_id])
-      elsif Current&.user
-        Current.user.members.includes(:chore_group).first&.chore_group
-      end
-
-    @chore_group ||= ChoreGroup.first
-    raise ActiveRecord::RecordNotFound, "No ChoreGroup found" unless @chore_group
-
-    @current_member =
-      if Current&.user
-        @chore_group.members.find_by(user_id: Current.user.id)
-      end
-
-    @current_member ||= @chore_group.members.first
-    raise ActiveRecord::RecordNotFound, "No Member in this group" unless @current_member
-
+    # @chore_group and @current_member are set by set_chore_group
     @bill = @chore_group.bills.build(member: @current_member)
     @members_for_split = @chore_group.members.includes(:user).order(:id)
   end
 
 
+  # POST /bills
+  def create
+    shared_member_ids = (params[:bill][:shared_member_ids] || []).reject(&:blank?).map(&:to_i)
 
-# POST /bills
-def create
-  shared_member_ids = (params[:bill][:shared_member_ids] || []).reject(&:blank?).map(&:to_i)
-  safe_params = bill_params.except(:shared_member_ids)
+    # Use the chore_group and current_member from set_chore_group, not a raw :chore_group_id param
+    safe_params = bill_params.except(:shared_member_ids, :chore_group_id)
 
-  @bill = Bill.new(safe_params)
+    @bill = @chore_group.bills.build(safe_params)
+    @bill.member ||= @current_member
 
-  if @bill.save
-    update_bill_shares(@bill, shared_member_ids)
-    redirect_to chore_group_bills_path(@bill.chore_group), notice: "Bill created successfully."
-  else
-    @chore_group = @bill.chore_group
-    @current_member = @bill.member
-    @members_for_split = @chore_group.members.includes(:user).order(:id)
-    render :new, status: :unprocessable_entity
+    if @bill.save
+      update_bill_shares(@bill, shared_member_ids)
+      redirect_to chore_group_bills_path(@bill.chore_group), notice: "Bill created successfully."
+    else
+      @chore_group = @bill.chore_group || @chore_group
+      @current_member ||= @bill.member
+      @members_for_split = @chore_group.members.includes(:user).order(:id)
+      render :new, status: :unprocessable_entity
+    end
   end
-end
 
   # GET /bills/1/edit
   def edit
@@ -146,7 +129,7 @@ end
   def update
     shared_member_ids = (params[:bill][:shared_member_ids] || []).reject(&:blank?).map(&:to_i)
 
-    if @bill.update(bill_params)
+    if @bill.update(bill_params.except(:shared_member_ids))
       update_bill_shares(@bill, shared_member_ids)
       redirect_to bill_path(@bill), notice: "Bill updated successfully."
     else
@@ -156,7 +139,6 @@ end
       render :edit, status: :unprocessable_entity
     end
   end
-
 
   # DELETE /bills/1
   def destroy
@@ -183,40 +165,59 @@ end
   end
 
   def set_chore_group
-    @chore_group = ChoreGroup.find(params[:chore_group_id])
-
     unless Current&.user
       redirect_to root_path, alert: "You must sign in to view this group." and return
     end
 
-    @current_member = @chore_group.members.find_by(user_id: Current.user.id)
+    if params[:chore_group_id].present?
+      @chore_group = ChoreGroup.find_by!(code: params[:chore_group_id])
+    else
+      # If we came from a global route (/bills/new), pick a sensible default:
+      # the first group the user is a member of, or fall back to the first group
+      @chore_group =
+        Current.user.members.includes(:chore_group).first&.chore_group ||
+        ChoreGroup.first
+    end
+
+    raise ActiveRecord::RecordNotFound, "No ChoreGroup found" unless @chore_group
+
+    @current_member =
+      @chore_group.members.find_by(user_id: Current.user.id) ||
+      @chore_group.members.first
 
     unless @current_member
       redirect_to root_path, alert: "You are not a member of this group." and return
     end
   end
 
-    
+
   def set_chore_group_for_index
     unless Current&.user
       redirect_to root_path, alert: "You must sign in to view your bills." and return
     end
 
+    # All groups the current user belongs to
     @user_groups = ChoreGroup
       .joins(:members)
       .where(members: { user_id: Current.user.id })
       .distinct
 
     if params[:chore_group_id].present?
-      @chore_group = @user_groups.find_by(id: params[:chore_group_id])
+      # chore_group_id is actually the CODE in your URLs
+      @chore_group = @user_groups.find_by(code: params[:chore_group_id])
 
-      unless @chore_group
-        redirect_to root_path, alert: "You are not a member of this group." and return
+      if @chore_group
+        # Safe, because we already filtered by membership
+        @current_member = @chore_group.members.find_by(user_id: Current.user.id)
+      else
+        # Invalid code OR not one of the user's groups -> fall back to "all my bills"
+        @chore_group   = nil
+        @current_member = nil
+        flash.now[:alert] = "That group could not be found or you are not a member of it."
       end
-
-      @current_member = @chore_group.members.find_by(user_id: Current.user.id)
     else
-      @chore_group = nil
+      # Global "My Bills" view
+      @chore_group   = nil
       @current_member = nil
     end
   end
@@ -229,14 +230,19 @@ end
   end
 
   def bill_params
-    params.require(:bill).permit(:chore_group_id, :member_id, :total_amount, :description)
+    params.require(:bill).permit(
+      :chore_group_id,  # still allowed but we ignore it in create
+      :member_id,
+      :total_amount,
+      :description,
+      shared_member_ids: []
+    )
   end
-
 
   def create_bill_shares_for_group(bill, selected_member_ids)
     return if selected_member_ids.nil?
 
-    selected_member_ids -= [ bill.member_id ]
+    selected_member_ids -= [bill.member_id]
     members = Member.where(id: selected_member_ids)
     share_amount = (bill.total_amount / (members.size + 1)).round(2)
 
@@ -250,17 +256,13 @@ end
     end
   end
 
-
-
   def update_bill_shares(bill, selected_member_ids)
-    # selected_member_ids = params[:bill][:shared_member_ids].reject(&:blank?).map(&:to_i)
-    selected_member_ids -= [ bill.member_id ]
+    selected_member_ids -= [bill.member_id]
 
     existing_member_ids = bill.bill_shares.pluck(:member_id)
 
-    members_to_add = selected_member_ids - existing_member_ids
+    members_to_add    = selected_member_ids - existing_member_ids
     members_to_remove = existing_member_ids - selected_member_ids
-
 
     bill.bill_shares.where(member_id: members_to_remove).destroy_all
 
@@ -281,3 +283,4 @@ end
     end
   end
 end
+
