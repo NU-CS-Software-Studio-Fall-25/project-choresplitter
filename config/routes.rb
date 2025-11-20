@@ -26,13 +26,15 @@ Rails.application.routes.draw do
     resources :task_groups, only: [ :show ] do
       resources :tasks
     end
-    resources :bills, only: [:index, :new, :create], shallow: true do
-      resources :bill_shares, only: [:create, :update, :destroy], shallow: true
+    resources :bills, only: [ :index, :new, :create ], shallow: true do
+      resources :bill_shares, only: [ :create, :update, :destroy ], shallow: true
     end
     member do
       post   :join
       delete :leave
     end
+    resources :invitations, only: [:create]
+    resources :invitations, only: [:create]
     collection do
       get :join
       get :new_chore_group
@@ -41,15 +43,31 @@ Rails.application.routes.draw do
       post :search
     end
 
+    resources :members, only: [:index, :destroy]
+
+    resources :members, only: [:index, :destroy]
   end
+
   resource :session, only: [ :new, :create, :destroy ]
   resource :password, only: [ :new, :create, :edit, :update ]
 
   resources :users
   resources :sessions, only: [ :new, :create, :destroy ]
-  resources :bills, only: [:show, :edit, :update, :destroy]
+  resources :bills, only: [ :index, :show, :edit, :update, :destroy ]
+  resources :invitations, only: [:index, :update]
   # resources :chore_groups
-  resources :tasks
+  resources :tasks do
+    collection do
+      get :completed  # global completed tasks
+    end
+
+    member do
+      patch :complete
+      patch :reopen
+    end
+  end
+
+
   # root "chore_groups#index"
   # root "sessions#new"
   root "home#index"

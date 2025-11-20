@@ -1,6 +1,6 @@
 class SessionsController < ApplicationController
   allow_unauthenticated_access only: %i[new create]
-  skip_before_action :require_login, :require_authentication, only: [:new, :create], raise: false
+  skip_before_action :require_login, :require_authentication, only: [ :new, :create ], raise: false
   # rate_limit to: 10, within: 3.minutes, only: :create,
   #          with: -> { redirect_to new_session_url, alert: "Try again later." }
 
@@ -39,6 +39,11 @@ class SessionsController < ApplicationController
   end
 
   def destroy
+    Current.session&.destroy if Current.respond_to?(:session)
+    cookies.delete(:session_token) # or whatever cookie you set in start_new_session_for
+    # clear request-local Current
+    Current.user = nil if defined?(Current)
+    Current.session = nil if defined?(Current) && Current.respond_to?(:session)
     reset_session
     redirect_to new_session_path, notice: "Signed out."
   end
@@ -55,6 +60,6 @@ class SessionsController < ApplicationController
 
     email = (creds[:email_address] || creds[:email]).to_s.strip.downcase
     password = creds[:password].to_s
-    [email, password]
+    [ email, password ]
   end
 end

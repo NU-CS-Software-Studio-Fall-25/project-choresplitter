@@ -3,19 +3,60 @@
 
 <div class="container-fluid" style="margin-top: 40px;">
   <!-- Page Heading -->
-  <div class="d-sm-flex align-items-center justify-content-between mb-4">
-    <h1 class="h3 text-gray-800 mb-0">
-      Bills
-      <% if @chore_group %>
-        <small class="text-muted" style="font-size:.7em;">&nbsp;in <%= @chore_group.name %></small>
-      <% end %>
-    </h1>
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+      <div class="d-flex align-items-center">
+        <h1 class="h3 text-gray-800 mb-0">
+          Bills
+          <% if @chore_group %>
+            <small class="text-muted" style="font-size:.7em;">
+              &nbsp;in <%= @chore_group.name %>
+            </small>
+          <% else %>
+            <small class="text-muted" style="font-size:.7em;">
+              &nbsp;(All groups)
+            </small>
+          <% end %>
+        </h1>
 
-    <div>
-      <%= link_to "Create Bill", (@chore_group ? new_chore_group_bill_path(@chore_group) : "#"),
-          class: "d-none d-sm-inline-block btn btn-sm btn-primary shadow-sm" %>
+        <div class="ml-3">
+          <%= form_with url: bills_path, method: :get, local: true, class: "form-inline" do %>
+            <%= select_tag :chore_group_id,
+                  options_for_select(
+                    [["All groups", ""]] +
+                    (@user_groups || []).map { |g| [g.name, g.code] },
+                    params[:chore_group_id]
+                  ),
+                  class: "form-control form-control-sm",
+                  onchange: "this.form.submit();" %>
+
+            <% if params[:from].present? %>
+              <%= hidden_field_tag :from, params[:from] %>
+            <% end %>
+          <% end %>
+        </div>
+      </div>
+
+      <div>
+        <% if @chore_group %>
+          <%= link_to "Create Bill",
+                new_chore_group_bill_path(@chore_group),
+                class: "d-none d-sm-inline-block btn btn-sm btn-primary shadow-sm" %>
+        <% else %>
+          <button class="d-none d-sm-inline-block btn btn-sm btn-secondary shadow-sm" disabled>
+            Select a group to create bill
+          </button>
+        <% end %>
+      </div>
     </div>
-  </div>
+
+    <% if params[:from] == "group" && @chore_group.present? %>
+      <div class="mb-2">
+        <%= link_to "← Back to Group: #{@chore_group.name}",
+              chore_group_path(@chore_group),
+              class: "btn btn-link btn-sm p-0" %>
+      </div>
+    <% end %>
+
 
   <div class="row">
     <div class="col-xl-3 col-md-6 mb-4">
@@ -65,7 +106,10 @@
         <div class="card-body">
           <div class="row no-gutters align-items-center">
             <div class="col mr-2">
-              <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Bills In Group (You Involved)</div>
+              <% title = @chore_group ? "Bills In Group (You Involved)" : "Bills (You Involved)" %>
+              <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                <%= title %>
+              </div>
               <div class="h5 mb-0 font-weight-bold text-gray-800"><%= @involved_count || 0 %></div>
             </div>
             <div class="col-auto"><i class="fas fa-receipt fa-2x text-gray-300"></i></div>
@@ -101,15 +145,15 @@
                   </div>
                 </div>
 
-                <% unpaid_shares = bill.bill_shares.select { |s| s.status == "unpaid" && s.member_id != @current_member.id } %>
-                <% paid_shares   = bill.bill_shares.select { |s| s.status == "paid"   && s.member_id != @current_member.id } %>
+                <% unpaid_shares = bill.bill_shares.select { |s| s.status == "unpaid" && s.member_id != bill.member_id } %>
+                <% paid_shares   = bill.bill_shares.select { |s| s.status == "paid"   && s.member_id != bill.member_id } %>
 
                 <div class="mt-2">
                   <% if unpaid_shares.any? %>
                     <span class="badge badge-warning">Unpaid</span>
                     <% unpaid_shares.each do |s| %>
                       <span class="badge badge-light">
-                        <%= s.member.user&.email_address || "Member##{s.member_id}" %>
+                        <%= s.member&.name || s.member.user&.email_address || "Member##{s.member_id}" %>
                         owes <%= number_to_currency(s.amount) %>
                       </span>
                     <% end %>
@@ -123,7 +167,7 @@
                     Paid:
                     <% paid_shares.each do |s| %>
                       <span class="badge badge-success">
-                        <%= s.member.user&.email_address || "Member##{s.member_id}" %> <%= number_to_currency(s.amount) %>
+                        <%= s.member&.name || s.member.user&.email_address || "Member##{s.member_id}" %> <%= number_to_currency(s.amount) %>
                       </span>
                     <% end %>
                   </div>
@@ -154,7 +198,7 @@
                   <div>
                     <strong><%= bill.description %></strong>
                     <div class="small text-muted">
-                      Payer: <%= bill.member.user&.email_address || "Member##{bill.member_id}" %>
+                      Payer: <%= bill.member&.name || bill.member.user&.email_address || "Member##{bill.member_id}" %>
                       · Your share: <%= number_to_currency(share.amount) %>
                       · <%= l(bill.created_at, format: :short) rescue bill.created_at.to_s %>
                     </div>
@@ -171,7 +215,9 @@
               </div>
             <% end %>
           <% else %>
-            <div class="text-muted">No shares for you in this group.</div>
+            <div class="text-muted">
+              <%= @chore_group ? "No shares for you in this group." : "No shares for you." %>
+            </div>
           <% end %>
           <div class="mt-3 d-flex justify-content-center">
             <%== @pagy_owed.series_nav(:bootstrap) %>

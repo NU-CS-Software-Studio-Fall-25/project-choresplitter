@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_11_19_070439) do
+ActiveRecord::Schema[8.0].define(version: 2025_11_19_185842) do
   create_table "bill_shares", force: :cascade do |t|
     t.integer "bill_id", null: false
     t.integer "member_id", null: false
@@ -39,7 +39,22 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_19_070439) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.string "admin_name"
+    t.string "code", limit: 5
     t.index ["admin_id"], name: "index_chore_groups_on_admin_id"
+    t.index ["code"], name: "index_chore_groups_on_code", unique: true
+  end
+
+  create_table "invitations", force: :cascade do |t|
+    t.integer "chore_group_id", null: false
+    t.integer "sender_id", null: false
+    t.integer "recipient_id", null: false
+    t.string "status", default: "pending", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["chore_group_id", "recipient_id", "status"], name: "index_invitations_on_group_recipient_status"
+    t.index ["chore_group_id"], name: "index_invitations_on_chore_group_id"
+    t.index ["recipient_id"], name: "index_invitations_on_recipient_id"
+    t.index ["sender_id"], name: "index_invitations_on_sender_id"
   end
 
   create_table "members", force: :cascade do |t|
@@ -77,6 +92,9 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_19_070439) do
     t.bigint "task_group_id", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "state", default: "open", null: false
+    t.datetime "due_date"
+    t.datetime "completed_at"
     t.index ["member_id"], name: "index_tasks_on_member_id"
     t.index ["task_group_id"], name: "index_tasks_on_task_group_id"
   end
@@ -98,6 +116,9 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_19_070439) do
   add_foreign_key "bill_shares", "members"
   add_foreign_key "bills", "chore_groups"
   add_foreign_key "bills", "members"
+  add_foreign_key "invitations", "chore_groups"
+  add_foreign_key "invitations", "users", column: "recipient_id"
+  add_foreign_key "invitations", "users", column: "sender_id"
   add_foreign_key "members", "chore_groups"
   add_foreign_key "members", "users"
   add_foreign_key "sessions", "users"

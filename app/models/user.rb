@@ -33,6 +33,15 @@ class User < ApplicationRecord
       u.email_verified_at = Time.current # Google emails are verified
     end
   end
+  has_many :sent_invitations,
+           class_name: "Invitation",
+           foreign_key: :sender_id,
+           dependent: :nullify
+
+  has_many :received_invitations,
+           class_name: "Invitation",
+           foreign_key: :recipient_id,
+           dependent: :destroy
 
   # Define a regex for the special character and uppercase requirement
   PASSWORD_REQUIREMENTS = /\A
@@ -42,11 +51,11 @@ class User < ApplicationRecord
   /x
 
   # Add the validation
-  validates :password, 
-    format: { 
-      with: PASSWORD_REQUIREMENTS, 
-      message: "must be at least 8 characters long and include one uppercase letter and one special character" 
-    }, 
+  validates :password,
+    format: {
+      with: PASSWORD_REQUIREMENTS,
+      message: "must be at least 8 characters long and include one uppercase letter and one special character"
+    },
     if: -> { password.present? || password_confirmation.present? }
 
   def email_verified?

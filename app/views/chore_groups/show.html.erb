@@ -5,6 +5,18 @@
     <div>
       <h2 style="margin:0 0 6px;"><%= @chore_group.name %></h2>
       <p style="margin:0;"><strong>Admin Name:</strong> <%= @chore_group.admin_name %></p>
+
+      <p style="margin:6px 0 0;">
+        <strong>Code:</strong>
+        <code id="cg-code" style="padding:2px 6px; border:1px solid #e5e7eb; border-radius:4px; background:#f9fafb; font-family:ui-monospace, SFMono-Regular, Menlo, monospace;">
+          <%= @chore_group.code %>
+        </code>
+        <button type="button"
+                onclick="navigator.clipboard.writeText('<%= j @chore_group.code %>'); this.textContent='Copied!'; setTimeout(()=>this.textContent='Copy',1200);"
+                style="margin-left:8px; padding:4px 8px; border:1px solid #d1d5db; border-radius:6px; background:#f3f4f6; font-weight:600; cursor:pointer;">
+          Copy
+        </button>
+      </p>
     </div>
 
     <nav class="tabs" style="display:flex; gap:12px;">
@@ -21,6 +33,15 @@
           class: "tab-link #{'is-active' if @tab=='my_tasks'}",
           data: { tab: "my_tasks" },
           "aria-current": (@tab=="my_tasks" ? "page" : nil) %>
+
+      <% if @is_admin %>
+        <%= link_to "Admin",
+            chore_group_path(@chore_group, base_params.merge(tab: "admin", admin_page: 1)),
+            class: "tab-link #{'is-active' if @tab=='admin'}",
+            data: { tab: "admin" },
+            "aria-current": (@tab=="admin" ? "page" : nil) %>
+      <% end %>
+
     </nav>
   </div>
 
@@ -29,6 +50,9 @@
     <% if @tab == "my_tasks" %>
       <%= render partial: "task_groups/member_tasks",
                  locals: { tasks: @my_tasks, pagy: @pagy_my, chore_group: @chore_group } %>
+    <% elsif @tab == "admin" && @is_admin %>
+      <%= render partial: "members/admin_panel",
+                 locals: { chore_group: @chore_group } %>
     <% else %>
       <% if @chore_group.respond_to?(:users) %>
         <h3 style="margin-top:24px;">Members</h3>
@@ -110,7 +134,7 @@
       </div>
 
     <div style="margin-top:16px; display:flex; gap:12px;">
-      <%= link_to "Show details", chore_group_bills_path(@chore_group),
+      <%= link_to "Show details", chore_group_bills_path(@chore_group, from: "group"),
             style: "padding:8px 12px; border:1px solid #2563eb; color:#fff; background:#2563eb; border-radius:6px; text-decoration:none; font-weight:600;" %>
 
       <%= link_to "Create Bill", new_chore_group_bill_path(@chore_group),
