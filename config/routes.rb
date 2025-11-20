@@ -11,11 +11,17 @@ Rails.application.routes.draw do
   get "manifest" => "rails/pwa#manifest", as: :pwa_manifest
   get "service-worker" => "rails/pwa#service_worker", as: :pwa_service_worker
 
+  get "email/verify", to: "email_verifications#edit", as: "email_verification"
   # Defines the root path route ("/")
   # root "posts#index"
   get "dashboard-template" => "templates#index"
   get "about" => "about#index"
   get "home", to: "home#index"
+
+  post '/auth/:provider/callback', to: 'omniauth_callbacks#create'
+  get '/auth/:provider/callback', to: 'omniauth_callbacks#create'
+  get '/auth/failure', to: 'omniauth_callbacks#failure'
+  
   resources :chore_groups do
     resources :task_groups, only: [ :show ] do
       resources :tasks

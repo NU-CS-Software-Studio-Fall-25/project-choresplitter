@@ -53,6 +53,11 @@ gem "thruster", require: false
 
 gem "pwa"
 
+gem 'omniauth'
+gem 'omniauth-google-oauth2'
+gem 'omniauth-rails_csrf_protection' # Required for security
+gem 'dotenv-rails' # Recommended for managing API keys
+
 group :production do
   gem "pg", "~> 1.1"
 end
@@ -71,6 +76,7 @@ end
 group :development do
   # Use console on exceptions pages [https://github.com/rails/web-console]
   gem "web-console"
+  gem "letter_opener"
 end
 
 group :test do

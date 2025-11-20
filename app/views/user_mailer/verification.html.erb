@@ -1,0 +1,14 @@
+<%# app/views/user_mailer/verification.html.erb %>
+<h1>Welcome to ChoreSplitter!</h1>
+<p>
+  Hi <%= @user.email_address %>,
+</p>
+<p>
+  Before you can sign in, please verify your email address by clicking the link below:
+</p>
+<p>
+  <%= link_to "Verify My Email", @verification_url %>
+</p>
+<p>
+  If you didn't sign up for this, please ignore this email.
+</p>
