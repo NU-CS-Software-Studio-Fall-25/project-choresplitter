@@ -1,5 +1,7 @@
 <!-- Sidebar -->
 <ul class="navbar-nav bg-gradient-primary sidebar sidebar-dark accordion" id="accordionSidebar">
+<!-- Sidebar -->
+<ul class="navbar-nav bg-gradient-primary sidebar sidebar-dark accordion" id="accordionSidebar">
 
   <!-- Sidebar - Brand -->
   <%= link_to users_path, class: "sidebar-brand d-flex align-items-center justify-content-center" do %>
@@ -8,7 +10,16 @@
     </div>
     <div class="sidebar-brand-text mx-3">CleanCats</div>
   <% end %>
+  <!-- Sidebar - Brand -->
+  <%= link_to users_path, class: "sidebar-brand d-flex align-items-center justify-content-center" do %>
+    <div class="sidebar-brand-icon rotate-n-15">
+      <i class="fas fa-solid fa-hand-sparkles" style="color: #ffffff;"></i>
+    </div>
+    <div class="sidebar-brand-text mx-3">CleanCats</div>
+  <% end %>
 
+  <!-- Divider -->
+  <hr class="sidebar-divider my-0">
   <!-- Divider -->
   <hr class="sidebar-divider my-0">
 
@@ -34,6 +45,8 @@
     <% end %>
   </li>
 
+  <!-- Divider -->
+  <hr class="sidebar-divider">
   <!-- Divider -->
   <hr class="sidebar-divider">
 
@@ -94,11 +107,20 @@
 
     <hr class="sidebar-divider">
   <% end %>
+    <hr class="sidebar-divider">
+  <% end %>
 
   <!-- Sidebar Toggler (Sidebar) -->
   <div class="text-center d-none d-md-inline">
     <button class="rounded-circle border-0" id="sidebarToggle"></button>
   </div>
+  <!-- Sidebar Toggler (Sidebar) -->
+  <div class="text-center d-none d-md-inline">
+    <button class="rounded-circle border-0" id="sidebarToggle"></button>
+  </div>
+
+</ul>
+<!-- End of Sidebar -->
 
 </ul>
 <!-- End of Sidebar -->

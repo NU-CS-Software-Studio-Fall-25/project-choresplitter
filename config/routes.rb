@@ -28,6 +28,7 @@ Rails.application.routes.draw do
       delete :leave
     end
     resources :invitations, only: [:create]
+    resources :invitations, only: [:create]
     collection do
       get :join
       get :new_chore_group
@@ -35,6 +36,8 @@ Rails.application.routes.draw do
       post :join
       post :search
     end
+
+    resources :members, only: [:index, :destroy]
 
     resources :members, only: [:index, :destroy]
   end
