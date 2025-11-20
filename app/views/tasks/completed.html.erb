@@ -1,0 +1,55 @@
+<div style="padding: 5% 2%; color: #343434;">
+  <h2 class="pb-3">Completed Tasks</h2>
+
+  <div class="mb-3">
+    <%= link_to "Back to Tasks", tasks_path, class: "btn btn-secondary" %>
+  </div>
+
+  <% if @tasks.any? %>
+    <% @tasks.each do |task| %>
+      <div class="card mb-3 p-3 border-dark">
+        <h5><%= task.title %></h5>
+
+        <% if task.description.present? %>
+          <p><%= task.description %></p>
+        <% end %>
+
+        <small>
+        Group: <%= task.task_group.chore_group.name %><br>
+      </small>
+
+        <div class="task completed" style="margin-top:8px; display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+        <% if task.due_date.present? %>
+            <span style="
+            display: inline-block;
+            background-color: #f6c23e;
+            color: #343434;
+            padding: 0.25rem 0.75rem;
+            border-radius: 999px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            margin-right: 0.5rem;
+            ">
+            Due: <%= task.due_date.strftime("%b %d, %Y") %>
+            </span>
+
+            <% if task.overdue? %>
+            <span style="color:red; font-weight:500;">(Overdue)</span>
+            <% end %>
+        <% end %>
+          <small class="text-muted">
+            Completed <%= time_ago_in_words(task.completed_at) %> ago
+          </small>
+          <br><br>
+
+          <%= button_to "Reopen",
+                reopen_task_path(task),
+                method: :patch,
+                class: "btn btn-warning btn-sm" %>
+        </div>
+      </div>
+    <% end %>
+  <% else %>
+    <p>No completed tasks yet.</p>
+  <% end %>
+</div>

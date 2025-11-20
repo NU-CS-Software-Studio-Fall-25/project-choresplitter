@@ -1,9 +1,9 @@
 # db/seeds.rb
 require 'faker'
-require 'rubygems'
 
 puts "🌱 Seeding data..."
-# Clear existing data to prevent duplicates on re-seed
+
+# Clear existing data
 Task.destroy_all
 TaskGroup.destroy_all
 Member.destroy_all
@@ -11,105 +11,83 @@ ChoreGroup.destroy_all
 User.destroy_all
 puts "Cleared old data."
 
-# 1. Create all your users.
+# 1. Create users
 puts "Creating users..."
-puts "Creating users..."
-
-# 1. Define an array with the list of lowercase first names.
 first_names = []
-#   "kevin",
-#   "elizabeth",
-#   "david",
-#   "maria",
-#   "james",
-#   "sally",
-#   "michael",
-#   "patricia"
-# ]
-# #using facker to generate data
-100.times.map do
+100.times do
   name = Faker::Name.unique.first_name
   first_names << name
 end
-# puts first_names
-# 2. Loop through the array to create a user for each name.
+
 users = first_names.map do |name|
   User.create!(
-    # The email is generated directly from the simple name
-    email_address: "#{name}@example.com",
+    email_address: "#{name.downcase}@example.com",
     password: "90!PassWord!90",
     password_confirmation: "90!PassWord!90"
   )
 end
-
 puts "Created #{users.count} users."
 
-# 2. Create chore groups with random admins.
+# 2. Create chore groups
 puts "Creating chore groups..."
 chore_groups = 100.times.map do
-  test_user = users.sample
+  admin_user = users.sample
   ChoreGroup.create!(
     name: Faker::Company.unique.name,
-    admin: test_user, # Assigns the full user object
-    admin_name: test_user.email_address.split('@')[0].capitalize() # get admin name from user email
+    admin: admin_user,
+    admin_name: admin_user.email_address.split('@')[0].capitalize
   )
 end
 puts "Created #{chore_groups.count} chore groups."
 
-# 3. Create Members for each group. This is crucial for creating tasks later.
+# 3. Create members for each group
 puts "Creating members for each group..."
 chore_groups.each do |group|
-  # Find users not already the admin for this group
-  users_to_add = users.reject { |user| user.id == group.admin_id }
+  users_to_add = users.reject { |u| u.id == group.admin_id }
 
-  # Create the admin's own member record
+  # Admin member record
   Member.create!(user: group.admin, chore_group: group, role: 'admin', name: group.admin_name)
 
-  # Create member records for 3 other random users
+  # 10 random members per group
   users_to_add.sample(10).each do |user|
     Member.create!(user: user, chore_group: group, role: 'member', name: Faker::Name.unique.first_name)
   end
 end
 puts "Memberships created."
 
-# 4. Add Task Groups to each Chore Group.
-
+# 4. Add Task Groups to each Chore Group
 puts "Creating task groups..."
-task_group_names = []
-100.times.map do
-  name = Faker::Educator.subject
-  task_group_names << name
-end
+task_group_names = 100.times.map { Faker::Educator.subject }
 
 chore_groups.each do |group|
-  task_group_names.sample(1).each do |name| # Add 1 random task group to each chore group
+  task_group_names.sample(1).each do |name|
     TaskGroup.create!(chore_group: group)
   end
 end
 puts "Task groups created."
 
-# 5. Add Tasks to each Task Group, assigned to a random member of that group.
+# 5. Add Tasks to each Task Group
 puts "Creating tasks..."
-task_titles = []
-100.times.map do
-  name = Faker::Lorem.sentence
-  task_titles << name
-end
+task_titles = 100.times.map { Faker::Lorem.sentence(word_count: rand(3..6)) }
 
 TaskGroup.all.each do |task_group|
-  # Get the members belonging to this task group's parent chore group
   members_in_group = task_group.chore_group.members
 
-  # Create 20 random tasks and assign them to members of the group
   20.times do
+    # Randomly pick task state: mostly pending
+    state = rand < 0.8 ? "open" : "completed"
+    completed_at = state == "completed" ? Faker::Time.backward(days: 30) : nil
+
     Task.create!(
       title: task_titles.sample,
       task_group: task_group,
-      member: members_in_group.sample # Assign to a random member
+      member: members_in_group.sample,
+      state: state,
+      completed_at: completed_at,
+      due_date: Faker::Date.forward(days: rand(1..30)) # optional due date in the future
     )
   end
 end
 puts "Tasks created."
-
 
 puts "✅ Done seeding."

@@ -14,6 +14,27 @@
               <% if t.description.present? %>
                 <div style="color:#555; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"><%= t.description %></div>
               <% end %>
+              <!-- Due Date Pill -->
+              <% if t.due_date.present? %>
+                <div style="margin-top:4px;">
+                  <span style="
+                    display:inline-block;
+                    background-color:#f6c23e;
+                    color:#343434;
+                    padding:0.25rem 0.75rem;
+                    border-radius:999px;
+                    font-size:0.85rem;
+                    font-weight:500;
+                    margin-right:0.5rem;
+                  ">
+                    Due: <%= t.due_date.strftime("%b %d, %Y") %>
+                  </span>
+                  <% if t.overdue? %>
+                    <span style="color:red; font-weight:500;">(Overdue)</span>
+                  <% end %>
+                </div>
+              <% end %>
+
               <div style="font-size:12px; color:#777;">
                 Assigned to: <%= t.member&.try(:name) || t.member&.try(:id) || t.member&.try(:email) || "Unassigned" %>
                 · <%= t.created_at.strftime("%Y-%m-%d") %>
@@ -103,6 +124,9 @@
 
     <label style="display:block; font-weight:600; margin:12px 0 4px;">Description</label>
     <textarea name="task[description]" rows="4" style="width:100%; padding:8px; border:1px solid #ddd; border-radius:6px;"></textarea>
+
+    <label style="display:block; font-weight:600; margin:12px 0 4px;">Due Date</label>
+    <input type="date" name="task[due_date]" style="width:100%; padding:8px; border:1px solid #ddd; border-radius:6px;">
 
     <div style="display:flex; gap:8px; justify-content:flex-end; margin-top:16px;">
       <button type="button" onclick="this.closest('dialog').close()"
