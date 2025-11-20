@@ -23,7 +23,7 @@
             <%= select_tag :chore_group_id,
                   options_for_select(
                     [["All groups", ""]] +
-                    (@user_groups || []).map { |g| [g.name, g.id] },
+                    (@user_groups || []).map { |g| [g.name, g.code] },
                     params[:chore_group_id]
                   ),
                   class: "form-control form-control-sm",

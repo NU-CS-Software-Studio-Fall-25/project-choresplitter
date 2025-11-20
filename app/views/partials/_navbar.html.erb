@@ -1,93 +1,104 @@
- <!-- Sidebar -->
-        <ul class="navbar-nav bg-gradient-primary sidebar sidebar-dark accordion" id="accordionSidebar">
+<!-- Sidebar -->
+<ul class="navbar-nav bg-gradient-primary sidebar sidebar-dark accordion" id="accordionSidebar">
 
-            <!-- Sidebar - Brand -->
-            <%= link_to users_path, class: "sidebar-brand d-flex align-items-center justify-content-center" do %>
-                <div class="sidebar-brand-icon rotate-n-15">
-                    <i class="fas fa-solid fa-hand-sparkles" style="color: #ffffff;"></i>
-                </div>
-                <div class="sidebar-brand-text mx-3">CleanCats</div>
-            <% end %>
+  <!-- Sidebar - Brand -->
+  <%= link_to users_path, class: "sidebar-brand d-flex align-items-center justify-content-center" do %>
+    <div class="sidebar-brand-icon rotate-n-15">
+      <i class="fas fa-solid fa-hand-sparkles" style="color: #ffffff;"></i>
+    </div>
+    <div class="sidebar-brand-text mx-3">CleanCats</div>
+  <% end %>
 
-            <!-- Divider -->
-            <hr class="sidebar-divider my-0">
+  <!-- Divider -->
+  <hr class="sidebar-divider my-0">
 
-            <!-- Nav Item - Dashboard -->
-            <li class="nav-item active">
-                <%= active_link_to users_path, class: "nav-link" do %>
-                    <i class="fas fa-fw fa-tachometer-alt"></i>
-                    <span>Dashboard</span>
-                <% end %>
+  <!-- Nav Item - Dashboard -->
+  <li class="nav-item active">
+    <%= active_link_to users_path, class: "nav-link" do %>
+      <i class="fas fa-fw fa-tachometer-alt"></i>
+      <span>Dashboard</span>
+    <% end %>
+  </li>
 
-               
-                <%# <%= link_to ('<i class="fas fa-fw fa-tachometer-alt"></i><span>Dashboard</span>').html_safe, users_path%> 
-            </li>
+  <!-- Invitations (Inbox) -->
+  <li class="nav-item active">
+    <%= active_link_to invitations_path, class: "nav-link" do %>
+      <i class="fas fa-fw fa-envelope"></i>
+      <span>Invitations</span>
+    <% end %>
+  </li>
 
-            <!-- Divider -->
-            <hr class="sidebar-divider">
+  <!-- Divider -->
+  <hr class="sidebar-divider">
 
-            <!-- Heading -->
-            <div class="sidebar-heading">
-                Manage Groups
-            </div>
-            
-             <!-- Create Group -->
-            <li class="nav-item active">
-                <%= active_link_to new_chore_group_chore_groups_path, class: "nav-link" do %>
-                    <i class="fas fa-solid fa-plus" style="color: #ffffff;"></i>
-                    <span>Create Group</span>
-                <% end %>
-            </li>
-            <!-- Join Group -->
-            <li class="nav-item active">
-                <%= active_link_to join_chore_groups_path, class: "nav-link" do %>
-                    <i class="fas fa-solid fa-door-open" style="color: #ffffff;"></i>
-                    <span>Join Group</span>
-                <% end %>
-            </li>
-            <!-- Divider -->
-            <hr class="sidebar-divider">
-            <div class="sidebar-heading">
-                Manage Duties
-            </div>
-            <li class="nav-item active">
-                    <%= active_link_to bills_path, class: "nav-link" do %>
-                        <i class="fas fa-receipt fa-2x" style="color: #ffffff;"></i>
-                        <span>My Bills</span>
-                    <% end %>
-            </li>
-            <li class="nav-item active">
-                    <%= active_link_to tasks_path, class: "nav-link" do %>
-                        <i class="fas fa-tasks" style="color: #ffffff;"></i>
-                        <span>My Open Tasks</span>
-                    <% end %>
-            </li>
+  <!-- Heading -->
+  <div class="sidebar-heading">
+    Manage Groups
+  </div>
 
-            <li class="nav-item active">
-                    <%= active_link_to completed_tasks_path, class: "nav-link" do %>
-                        <i class="fas fa-solid fa-check" style="color: #ffffff;"></i>
-                        <span>My Completed Tasks</span>
-                    <% end %>
-            </li>
-            
+  <!-- Create Group -->
+  <li class="nav-item active">
+    <%= active_link_to new_chore_group_chore_groups_path, class: "nav-link" do %>
+      <i class="fas fa-solid fa-plus" style="color: #ffffff;"></i>
+      <span>Create Group</span>
+    <% end %>
+  </li>
 
-            <!-- Divider -->
-            <hr class="sidebar-divider">
-            <% if user_signed_in? %>
-                <li class="nav-item active">
-                    <%= link_to session_path, class: "nav-link", data: { turbo_method: :delete } do %>
-                        <i class="fas fa-solid fa-sign-out-alt" style="color: #ffffff;"></i>
-                        <span>Logout</span>
-                    <% end %>
-                </li>
+  <!-- Join Group -->
+  <li class="nav-item active">
+    <%= active_link_to join_chore_groups_path, class: "nav-link" do %>
+      <i class="fas fa-solid fa-door-open" style="color: #ffffff;"></i>
+      <span>Join Group</span>
+    <% end %>
+  </li>
 
-                <hr class="sidebar-divider">
-            <% end %>
+  <!-- Divider -->
+  <hr class="sidebar-divider">
 
-            <!-- Sidebar Toggler (Sidebar) -->
-            <div class="text-center d-none d-md-inline">
-                <button class="rounded-circle border-0" id="sidebarToggle"></button>
-            </div>
+  <!-- Heading -->
+  <div class="sidebar-heading">
+    Manage Duties
+  </div>
 
-        </ul>
-        <!-- End of Sidebar -->
+  <li class="nav-item active">
+    <%= active_link_to bills_path, class: "nav-link" do %>
+      <i class="fas fa-receipt fa-2x" style="color: #ffffff;"></i>
+      <span>My Bills</span>
+    <% end %>
+  </li>
+
+  <li class="nav-item active">
+    <%= active_link_to tasks_path, class: "nav-link" do %>
+      <i class="fas fa-tasks" style="color: #ffffff;"></i>
+      <span>My Open Tasks</span>
+    <% end %>
+  </li>
+
+  <li class="nav-item active">
+    <%= active_link_to completed_tasks_path, class: "nav-link" do %>
+      <i class="fas fa-solid fa-check" style="color: #ffffff;"></i>
+      <span>My Completed Tasks</span>
+    <% end %>
+  </li>
+
+  <!-- Divider -->
+  <hr class="sidebar-divider">
+
+  <% if user_signed_in? %>
+    <li class="nav-item active">
+      <%= link_to session_path, class: "nav-link", data: { turbo_method: :delete } do %>
+        <i class="fas fa-solid fa-sign-out-alt" style="color: #ffffff;"></i>
+        <span>Logout</span>
+      <% end %>
+    </li>
+
+    <hr class="sidebar-divider">
+  <% end %>
+
+  <!-- Sidebar Toggler (Sidebar) -->
+  <div class="text-center d-none d-md-inline">
+    <button class="rounded-circle border-0" id="sidebarToggle"></button>
+  </div>
+
+</ul>
+<!-- End of Sidebar -->

@@ -14,22 +14,38 @@ class TasksController < ApplicationController
   end
 
   def completed
-    @tasks = Task.where(state: "completed").order(completed_at: :desc)
+    my_member_ids = current_user.members.select(:id)
+
+    @tasks = Task
+      .where(member_id: my_member_ids, state: "completed")
+      .includes(task_group: :chore_group)
+      .order(completed_at: :desc)
+
     @pagy, @tasks = pagy(@tasks, items: 10)
   end
 
-
   def index
-    if params[:chore_group_id]
-      @chore_group = ChoreGroup.find(params[:chore_group_id])
-      @tasks = @chore_group.tasks.where(state: "open")
+    my_member_ids = current_user.members.select(:id)
+
+    if params[:chore_group_id].present?
+      @chore_group = ChoreGroup.find_by!(code: params[:chore_group_id])
+
+      current_member = @chore_group.members.find_by(user_id: current_user.id)
+
+      # Only tasks in this group assigned to ME
+      @tasks = @chore_group.tasks
+                          .where(state: "open", member_id: current_member&.id)
     else
-       @tasks = Task.where(member_id: current_user.members.select(:id))
-                 .where(state: "open")
+      # All open tasks assigned to me across ALL groups
+      @tasks = Task
+        .where(state: "open", member_id: my_member_ids)
+        .joins(task_group: :chore_group)
     end
+
     @tasks = @tasks.includes(task_group: :chore_group).order(due_date: :asc)
     @pagy, @tasks = pagy(@tasks, items: 10)
   end
+
   def create
     attrs = params.fetch(:task, {}).permit(:title, :description, :due_date)
     attrs[:title] = "New Task" if attrs[:title].blank?
@@ -59,7 +75,7 @@ class TasksController < ApplicationController
 
   private
   def set_chore_group
-    @chore_group = ChoreGroup.find(params[:chore_group_id])
+    @chore_group = ChoreGroup.find_by!(code: params[:chore_group_id])
   end
 
   def set_task_group
