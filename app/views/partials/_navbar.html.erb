@@ -14,7 +14,7 @@
 
             <!-- Nav Item - Dashboard -->
             <li class="nav-item active">
-                <%= link_to users_path, class: "nav-link" do %>
+                <%= active_link_to users_path, class: "nav-link" do %>
                     <i class="fas fa-fw fa-tachometer-alt"></i>
                     <span>Dashboard</span>
                 <% end %>
@@ -33,22 +33,46 @@
             
              <!-- Create Group -->
             <li class="nav-item active">
-                <%= link_to new_chore_group_chore_groups_path, class: "nav-link" do %>
-                    <i class="fas fa-regular fa-square-plus" style="color: #ffffff;"></i>
+                <%= active_link_to new_chore_group_chore_groups_path, class: "nav-link" do %>
+                    <i class="fas fa-solid fa-plus" style="color: #ffffff;"></i>
                     <span>Create Group</span>
                 <% end %>
             </li>
             <!-- Join Group -->
             <li class="nav-item active">
-                <%= link_to join_chore_groups_path, class: "nav-link" do %>
-                    <i class="fas fa-solid fa-right-to-bracket" style="color: #ffffff;"></i>
+                <%= active_link_to join_chore_groups_path, class: "nav-link" do %>
+                    <i class="fas fa-solid fa-door-open" style="color: #ffffff;"></i>
                     <span>Join Group</span>
                 <% end %>
-              </li>
+            </li>
+            <!-- Divider -->
+            <hr class="sidebar-divider">
+            <div class="sidebar-heading">
+                Manage Duties
+            </div>
+            <li class="nav-item active">
+                    <%= active_link_to bills_path, class: "nav-link" do %>
+                        <i class="fas fa-receipt fa-2x" style="color: #ffffff;"></i>
+                        <span>My Bills</span>
+                    <% end %>
+            </li>
+            <li class="nav-item active">
+                    <%= active_link_to tasks_path, class: "nav-link" do %>
+                        <i class="fas fa-tasks" style="color: #ffffff;"></i>
+                        <span>My Open Tasks</span>
+                    <% end %>
+            </li>
+
+            <li class="nav-item active">
+                    <%= active_link_to completed_tasks_path, class: "nav-link" do %>
+                        <i class="fas fa-solid fa-check" style="color: #ffffff;"></i>
+                        <span>My Completed Tasks</span>
+                    <% end %>
+            </li>
+            
 
             <!-- Divider -->
             <hr class="sidebar-divider">
-
             <% if user_signed_in? %>
                 <li class="nav-item active">
                     <%= link_to session_path, class: "nav-link", data: { turbo_method: :delete } do %>

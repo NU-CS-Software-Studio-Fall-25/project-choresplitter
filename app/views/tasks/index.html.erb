@@ -1,13 +1,49 @@
-<h2>All tasks</h2>
-<div class="d-flex flex-column">
-  <ul class="list-group">
-    <% @tasks.each do |t| %>
-      <li class="list-group-item"><%= t.title%></li> 
-      <li class="list-group-item"><%= t.description%></li> 
-      <li class="list-group-item"><%= t.member_id%></li> 
-      <li class="list-group-item"><%= t.task_group_id%></li> 
-      <li class="list-group-item"><%= t.created_at%></li> 
-      <li class="list-group-item"><%= t.updated_at%></li> 
-    <% end %>
-  </ul>
+<div style="padding: 5% 2%; color: #343434;">
+  <h2 class="pb-3">My Open Tasks</h2>
+
+  <% @tasks.each do |task| %>
+    <div class="card mb-3 p-3 border-dark">
+      <h5><%= task.title %></h5>
+
+      <% if task.description.present? %>
+        <p><%= task.description %></p>
+      <% end %>
+
+      <small>
+        Group:
+        <%= link_to task.task_group.chore_group.name, chore_group_path(task.task_group.chore_group), style: "color:#1a73e8; text-decoration:underline;" %>
+        <br>
+      </small>
+
+      <div class="task" style="margin-top:8px; display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+        <% if task.due_date.present? %>
+          <span style="
+            display: inline-block;
+            background-color: #f6c23e;
+            color: #343434;
+            padding: 0.25rem 0.75rem;
+            border-radius: 999px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            margin-right: 0.5rem;">
+            Due: <%= task.due_date.strftime("%b %d, %Y") %>
+          </span>
+
+          <% if task.overdue? %>
+            <span style="color:red; font-weight:500;">(Overdue)</span>
+          <% end %>
+        <% end %>
+
+      
+        <%= button_to "Mark Complete", complete_task_path(task), method: :patch, class: "btn btn-success btn-sm" %>
+
+        <!-- Delete Button -->
+        <%= button_to "Delete",
+              polymorphic_path([task.task_group.chore_group, task.task_group, task]),
+              method: :delete,
+              data: { turbo_confirm: "Delete this task?" },
+              class: "btn btn-danger btn-sm" %>
+      </div>
+    </div>
+  <% end %>
 </div>

@@ -42,7 +42,18 @@ Rails.application.routes.draw do
   resources :sessions, only: [ :new, :create, :destroy ]
   resources :bills, only: [ :index, :show, :edit, :update, :destroy ]
   # resources :chore_groups
-  resources :tasks
+  resources :tasks do
+    collection do
+      get :completed  # global completed tasks
+    end
+
+    member do
+      patch :complete
+      patch :reopen
+    end
+  end
+
+
   # root "chore_groups#index"
   # root "sessions#new"
   root "home#index"
