@@ -27,6 +27,7 @@ Rails.application.routes.draw do
       post   :join
       delete :leave
     end
+    resources :invitations, only: [:create]
     collection do
       get :join
       get :new_chore_group
@@ -37,12 +38,14 @@ Rails.application.routes.draw do
 
     resources :members, only: [:index, :destroy]
   end
+
   resource :session, only: [ :new, :create, :destroy ]
   resource :password, only: [ :new, :create, :edit, :update ]
 
   resources :users
   resources :sessions, only: [ :new, :create, :destroy ]
   resources :bills, only: [ :index, :show, :edit, :update, :destroy ]
+  resources :invitations, only: [:index, :update]
   # resources :chore_groups
   resources :tasks do
     collection do

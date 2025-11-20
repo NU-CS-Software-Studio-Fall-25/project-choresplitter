@@ -7,6 +7,16 @@ class User < ApplicationRecord
   has_many :members, dependent: :destroy
   has_many :chore_groups, through: :members
 
+  has_many :sent_invitations,
+           class_name: "Invitation",
+           foreign_key: :sender_id,
+           dependent: :nullify
+
+  has_many :received_invitations,
+           class_name: "Invitation",
+           foreign_key: :recipient_id,
+           dependent: :destroy
+
   # Define a regex for the special character and uppercase requirement
   PASSWORD_REQUIREMENTS = /\A
     (?=.{8,})           # Must be at least 8 characters long

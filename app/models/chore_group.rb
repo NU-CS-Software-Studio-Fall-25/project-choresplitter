@@ -10,6 +10,8 @@ class ChoreGroup < ApplicationRecord
   has_many :bills, dependent: :destroy
   has_many :bill_shares, through: :bills
 
+  has_many :invitations, dependent: :destroy
+
   validates :name, presence: true, uniqueness: { case_sensitive: false }
 
   validates :code,
