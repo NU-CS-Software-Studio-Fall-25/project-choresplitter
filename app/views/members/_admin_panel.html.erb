@@ -6,7 +6,7 @@
               method: :post,
               scope: :invitation,
               local: true,
-              html: { style: "display:flex; gap:8px; align-items:center; margin-bottom:16px;" } do |f| %>
+              html: { style: "display:flex; gap:8px; align-items:center; margin-bottom:4px;" } do |f| %>
 
   <%= f.email_field :email,
         placeholder: "Enter user's email",
@@ -15,7 +15,19 @@
 
   <%= f.submit "Send Invite",
         style: "padding:8px 12px; border-radius:6px; border:1px solid #2563eb; background:#2563eb; color:white; font-weight:600; cursor:pointer;" %>
+  <% end %>
+
+<% if flash[:invite_error].present? %>
+<p style="margin:4px 0 12px; color:#dc2626; font-size:0.875rem;">
+    <%= flash[:invite_error] %>
+</p>
+<% elsif flash[:invite_success].present? %>
+<p style="margin:4px 0 12px; color:#16a34a; font-size:0.875rem;">
+    <%= flash[:invite_success] %>
+</p>
 <% end %>
+
+
 
 <h3 style="margin-top:24px;">Manage Members</h3>
 

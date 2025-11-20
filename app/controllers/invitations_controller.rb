@@ -17,13 +17,13 @@ class InvitationsController < ApplicationController
 
     recipient = User.find_by(email_address: email)
     unless recipient
-      redirect_to chore_group_path(@chore_group, tab: "admin"),
-                  alert: "No user found with email #{email}." and return
+      flash[:invite_error] = "No user found with email #{email}."
+      redirect_to chore_group_path(@chore_group, tab: "admin") and return
     end
 
     if @chore_group.members.exists?(user_id: recipient.id)
-      redirect_to chore_group_path(@chore_group, tab: "admin"),
-                  alert: "That user is already a member of this group." and return
+      flash[:invite_error] = "That user is already a member of this group."
+      redirect_to chore_group_path(@chore_group, tab: "admin") and return
     end
 
     invite = @chore_group.invitations.find_or_initialize_by(
@@ -33,18 +33,19 @@ class InvitationsController < ApplicationController
     )
 
     if invite.persisted?
-      redirect_to chore_group_path(@chore_group, tab: "admin"),
-                  notice: "An invitation is already pending for that user." and return
+      flash[:invite_success] = "An invitation is already pending for #{email}."
+      redirect_to chore_group_path(@chore_group, tab: "admin") and return
     end
 
     if invite.save
-      redirect_to chore_group_path(@chore_group, tab: "admin"),
-                  notice: "Invitation sent to #{email}."
+      flash[:invite_success] = "Invitation sent to #{email}."
     else
-      redirect_to chore_group_path(@chore_group, tab: "admin"),
-                  alert: invite.errors.full_messages.to_sentence
+      flash[:invite_error] = invite.errors.full_messages.to_sentence
     end
+
+    redirect_to chore_group_path(@chore_group, tab: "admin")
   end
+
 
   # PATCH /invitations/:id
   # params[:decision] in ["accept", "decline"]
