@@ -1,6 +1,10 @@
-<%= form_with model: bill, url: (bill.persisted? ? bill_path(bill) : chore_group_bills_path(chore_group)), local: true do |f| %>
+<%= form_with model: bill, url: (bill.persisted? ? bill_path(bill) : chore_group_bills_path(chore_group)), local: true, id: "bill-form" do |f| %>
   <%= f.hidden_field :chore_group_id, value: chore_group.id %>
   <%= f.hidden_field :member_id, value: current_member.id %>
+
+  <div id="math-error" class="alert alert-danger d-none">
+    The sum of shares does not match the total amount. Please adjust.
+  </div>
 
   <div class="form-group">
     <label class="small mb-1 text-gray-700">Description</label>
@@ -11,93 +15,271 @@
     <label class="small mb-1 text-gray-700">Total Amount</label>
     <div class="input-group">
       <div class="input-group-prepend"><span class="input-group-text">$</span></div>
-      <%= f.number_field :total_amount, step: 0.01, min: 0.01, id: "bill_total", class: "form-control", placeholder: "0.00" %>
+      <%= f.number_field :total_amount, step: 0.01, min: 0.01, id: "bill_total", class: "form-control", placeholder: "0.00", required: true %>
     </div>
-    <small class="form-text text-muted">
-      Will be split equally among selected members (payer included).
-    </small>
   </div>
 
   <div class="form-group">
-    <label class="small mb-2 text-gray-700">Participants</label>
+    <div class="d-flex justify-content-between align-items-end mb-2">
+      <label class="small text-gray-700 m-0">Participants & Splitting</label>
+      <div class="custom-control custom-switch">
+        <input type="checkbox" class="custom-control-input" id="splitModeToggle">
+        <label class="custom-control-label small" for="splitModeToggle">Manual Splitting</label>
+      </div>
+    </div>
+
     <div class="card border-left-primary">
       <div class="card-body py-2">
         <div class="row">
           <% members_for_split.each do |m| %>
             <% mid = m.id %>
             <% is_me = (mid == current_member.id) %>
-            <div class="col-6 col-md-4 mb-2">
-              <div class="custom-control custom-checkbox">
-                <input
-                  name="bill[shared_member_ids][]"
-                  class="custom-control-input <%= 'split-member' unless is_me %>"
-                  type="checkbox"
-                  id="member_<%= mid %>"
-                  value="<%= mid %>"
-                  <%= is_me ? 'disabled' : 'checked' %>>
-                <label class="custom-control-label" for="member_<%= mid %>">
-                  <%= m.name || m.user&.email_address || m.user&.name || "Member##{mid}" %>
-                  <% if is_me %><span class="badge badge-light ml-1">you</span><% end %>
-                </label>
+            
+            <% existing_share = bill.bill_shares.find { |s| s.member_id == mid } %>
+            <% initial_amount = existing_share&.amount || 0.00 %>
+
+            <div class="col-12 mb-2 p-2 border-bottom participant-row">
+              <div class="d-flex align-items-center justify-content-between">
+                
+                <div class="custom-control custom-checkbox d-flex align-items-center">
+                  <input
+                    name="bill[shared_member_ids][]"
+                    class="custom-control-input <%= 'split-member-check' unless is_me %>"
+                    type="checkbox"
+                    id="member_<%= mid %>"
+                    value="<%= mid %>"
+                    data-member-id="<%= mid %>"
+                    data-is-me="<%= is_me %>"
+                    <%= is_me ? 'disabled' : 'checked' %>>
+                    <% if is_me %>
+                       <input type="hidden" name="bill[shared_member_ids][]" value="<%= mid %>">
+                    <% end %>
+                  
+                  <label class="custom-control-label" for="member_<%= mid %>">
+                    <%= m.name || m.user&.name || "Member##{mid}" %>
+                    <% if is_me %><span class="badge badge-primary ml-1">You (Payer)</span><% end %>
+                  </label>
+                </div>
+
+                <div class="input-group input-group-sm" style="width: 120px;">
+                  <div class="input-group-prepend">
+                    <span class="input-group-text border-0 bg-transparent">$</span>
+                  </div>
+                  <input 
+                    type="number" 
+                    step="0.01" 
+                    min="0"
+                    name="bill[manual_amounts][<%= mid %>]"
+                    class="form-control text-right share-amount-input <%= is_me ? 'my-share-input' : 'other-share-input' %>"
+                    id="amount_<%= mid %>"
+                    data-member-id="<%= mid %>"
+                    value="<%= initial_amount %>"
+                    readonly
+                  >
+                </div>
+
               </div>
             </div>
           <% end %>
         </div>
 
-        <div class="mt-2">
-          <button class="btn btn-sm btn-outline-secondary" id="toggle-select-others" type="button">
-            Toggle Select Others
-          </button>
+        <div class="mt-2 text-right">
+           <small class="text-muted" id="split-info">Equal split active</small>
         </div>
       </div>
     </div>
-
-    <div class="mt-2 small text-muted" id="split-preview">
-      Selected: <span id="selected-count">0</span> people (excluding you).
-      &nbsp;Each pays: <strong>$<span id="each-amount">0.00</span></strong>
-    </div>
   </div>
 
-  <% cancel_url = bill.persisted? ? bill_path(bill) : chore_group_bills_path(chore_group) %>
-
-  <div class="d-flex">
-    <%= f.submit (bill.persisted? ? "Save Changes" : "Create Bill"),
-          class: "btn btn-primary mr-2" %>
+  <div class="d-flex mt-3">
+    <%= f.submit (bill.persisted? ? "Save Changes" : "Create Bill"), class: "btn btn-primary mr-2", id: "submit-btn" %>
   </div>
 <% end %>
 
 <script>
-(function () {
-  const meId = parseInt(
-    document.querySelector('input[name="bill[member_id]"]')?.value,
-    10
-  );
-  function updatePreview() {
-    const totalEl = document.getElementById('bill_total');
-    const boxes = Array.from(document.querySelectorAll('.split-member'));
-    const total = parseFloat(totalEl && totalEl.value) || 0;
-    const selectedOthers = boxes.filter(b => b.checked && parseInt(b.value) !== meId).length;
-    const people = selectedOthers + 1;
-    const each = people > 0 ? (total / people) : 0;
-    const c1 = document.getElementById('selected-count');
-    const c2 = document.getElementById('each-amount');
-    if (c1) c1.innerText = selectedOthers;
-    if (c2) c2.innerText = each.toFixed(2);
-  }
-  document.addEventListener('input', e => {
-    if (e.target.matches('#bill_total, .split-member')) updatePreview();
-  });
-  const toggleBtn = document.getElementById('toggle-select-others');
-  if (toggleBtn) {
-    toggleBtn.addEventListener('click', () => {
-      const boxes = Array.from(document.querySelectorAll('.split-member'));
-      const others = boxes.filter(b => parseInt(b.value) !== meId);
-      const checkedCount = others.filter(b => b.checked).length;
-      const targetState = checkedCount < (others.length / 2);
-      others.forEach(b => b.checked = targetState);
-      updatePreview();
+document.addEventListener('DOMContentLoaded', function() {
+  const totalInput = document.getElementById('bill_total');
+  const modeToggle = document.getElementById('splitModeToggle');
+  const checkBoxes = Array.from(document.querySelectorAll('.split-member-check'));
+  const allAmountInputs = Array.from(document.querySelectorAll('.share-amount-input'));
+  const myInput = document.querySelector('.my-share-input'); 
+  const otherInputs = Array.from(document.querySelectorAll('.other-share-input')); 
+  const submitBtn = document.getElementById('submit-btn');
+  const infoText = document.getElementById('split-info');
+  const errorBox = document.getElementById('math-error');
+
+  let isManual = modeToggle.checked; 
+
+  function calculateEqualSplit() {
+    if (isManual) return; 
+
+    const total = parseFloat(totalInput.value) || 0;
+    
+    const checkedOthers = checkBoxes.filter(cb => cb.checked);
+    const count = checkedOthers.length + 1; 
+    
+    const perPerson = total / count;
+    
+    let runningSum = 0;
+    
+    otherInputs.forEach(input => {
+      const mid = input.dataset.memberId;
+      const cb = document.querySelector(`input[data-member-id="${mid}"]`);
+      
+      if (cb && cb.checked) {
+        input.readOnly = true; 
+        input.value = perPerson.toFixed(2);
+        runningSum += parseFloat(input.value);
+        input.disabled = false;
+        // input.parentElement.classList.remove('d-none'); // 保持显示
+      } else {
+        input.readOnly = true;
+        input.value = 0.00;
+        input.disabled = true; 
+      }
     });
+
+    myInput.readOnly = true; 
+    const myShare = total - runningSum;
+    myInput.value = myShare.toFixed(2);
+    
+    validateMath();
   }
-  document.addEventListener('DOMContentLoaded', updatePreview);
-})();
+
+  function handleManualChange(e) {
+    if (!isManual) {
+        calculateEqualSplit();
+        return;
+    }
+    
+    if (e.target === myInput) {
+        validateMath(); 
+        return;
+    }
+
+    const total = parseFloat(totalInput.value) || 0;
+    let othersSum = 0;
+
+    otherInputs.forEach(input => {
+      const cb = document.querySelector(`input[data-member-id="${input.dataset.memberId}"]`);
+      if (cb && cb.checked) {
+          const val = parseFloat(input.value) || 0;
+          othersSum += val;
+      }
+    });
+
+    const myNewShare = total - othersSum;
+    
+    myInput.value = myNewShare.toFixed(2);
+    
+    myInput.classList.add('bg-warning');
+    setTimeout(() => myInput.classList.remove('bg-warning'), 300);
+
+    validateMath();
+  }
+
+  function validateMath() {
+    const total = parseFloat(totalInput.value) || 0;
+    let sum = 0;
+    
+    allAmountInputs.forEach(input => {
+      sum += parseFloat(input.value) || 0;
+    });
+
+    const diff = Math.abs(total - sum);
+    const myShareVal = parseFloat(myInput.value);
+
+    let isValid = true;
+    let errorMsg = "";
+
+    if (diff > 0.05) {
+      isValid = false;
+      errorMsg = `Total mismatch. Sum: ${sum.toFixed(2)} vs Total: ${total.toFixed(2)}`;
+    } else if (myShareVal < 0) {
+      isValid = false;
+      errorMsg = "Your share cannot be negative. Please lower others' amounts.";
+      myInput.classList.add('is-invalid');
+    } else {
+      myInput.classList.remove('is-invalid');
+    }
+
+    if (!isValid) {
+      submitBtn.disabled = true;
+      errorBox.textContent = errorMsg;
+      errorBox.classList.remove('d-none');
+    } else {
+      submitBtn.disabled = false;
+      errorBox.classList.add('d-none');
+    }
+  }
+
+  modeToggle.addEventListener('change', function() {
+    isManual = this.checked;
+    
+    if (isManual) {
+      allAmountInputs.forEach(inp => {
+        const mid = inp.dataset.memberId;
+        const cb = document.querySelector(`input.split-member-check[value="${mid}"]`);
+        
+        if (inp === myInput || (cb && cb.checked)) {
+            inp.readOnly = false;
+            inp.classList.add('bg-white');
+        }
+      });
+      infoText.textContent = "Manual mode: Edit amounts. 'You' will absorb the remainder.";
+    } else {
+      allAmountInputs.forEach(inp => {
+        inp.readOnly = true; 
+        inp.classList.remove('bg-white');
+      });
+      calculateEqualSplit();
+      infoText.textContent = "Equal split active";
+    }
+  });
+
+  totalInput.addEventListener('input', calculateEqualSplit);
+  totalInput.addEventListener('change', calculateEqualSplit); 
+  
+  checkBoxes.forEach(cb => {
+    cb.addEventListener('change', () => {
+        const inp = document.getElementById(`amount_${cb.value}`);
+        
+        if (!cb.checked) {
+            inp.value = 0;
+            inp.readOnly = true;
+        } else if (isManual) {
+            inp.readOnly = false;
+            inp.classList.add('bg-white');
+        }
+        
+        if (!isManual) calculateEqualSplit();
+        else validateMath(); 
+    });
+  });
+
+  allAmountInputs.forEach(inp => {
+    inp.addEventListener('input', handleManualChange);
+  });
+
+  calculateEqualSplit(); 
+});
 </script>
+
+<style>
+.share-amount-input[readonly] {
+    background-color: #f8f9fa;
+    border: 1px solid #e3e6f0;
+    color: #6c757d;
+    cursor: not-allowed;
+}
+.share-amount-input.bg-white {
+    background-color: #fff !important;
+    cursor: text;
+}
+.participant-row:last-child {
+    border-bottom: none !important;
+}
+.bg-warning {
+    transition: background-color 0.2s ease;
+    background-color: #f6c23e !important;
+}
+</style>

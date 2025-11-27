@@ -102,13 +102,15 @@ class BillsController < ApplicationController
     shared_member_ids = (params[:bill][:shared_member_ids] || []).reject(&:blank?).map(&:to_i)
 
     # Use the chore_group and current_member from set_chore_group, not a raw :chore_group_id param
-    safe_params = bill_params.except(:shared_member_ids, :chore_group_id)
+    manual_amounts = params[:bill][:manual_amounts] || {}
+
+    safe_params = bill_params.except(:shared_member_ids, :chore_group_id, :manual_amounts)
 
     @bill = @chore_group.bills.build(safe_params)
     @bill.member ||= @current_member
 
     if @bill.save
-      update_bill_shares(@bill, shared_member_ids)
+      update_bill_shares(@bill, shared_member_ids, manual_amounts)
       redirect_to chore_group_bills_path(@bill.chore_group), notice: "Bill created successfully."
     else
       @chore_group = @bill.chore_group || @chore_group
@@ -128,9 +130,10 @@ class BillsController < ApplicationController
   # PATCH/PUT /bills/1
   def update
     shared_member_ids = (params[:bill][:shared_member_ids] || []).reject(&:blank?).map(&:to_i)
+    manual_amounts = params[:bill][:manual_amounts] || {}
 
-    if @bill.update(bill_params.except(:shared_member_ids))
-      update_bill_shares(@bill, shared_member_ids)
+    if @bill.update(bill_params.except(:shared_member_ids, :manual_amounts))
+      update_bill_shares(@bill, shared_member_ids, manual_amounts)
       redirect_to bill_path(@bill), notice: "Bill updated successfully."
     else
       @chore_group = @bill.chore_group
@@ -235,7 +238,8 @@ class BillsController < ApplicationController
       :member_id,
       :total_amount,
       :description,
-      shared_member_ids: []
+      shared_member_ids: [],
+      manual_amounts: {}
     )
   end
 
@@ -256,30 +260,32 @@ class BillsController < ApplicationController
     end
   end
 
-  def update_bill_shares(bill, selected_member_ids)
+  def update_bill_shares(bill, selected_member_ids, manual_amounts)
     selected_member_ids -= [bill.member_id]
 
     existing_member_ids = bill.bill_shares.pluck(:member_id)
 
-    members_to_add    = selected_member_ids - existing_member_ids
     members_to_remove = existing_member_ids - selected_member_ids
 
     bill.bill_shares.where(member_id: members_to_remove).destroy_all
 
+    is_manual = manual_amounts.present? && manual_amounts.values.any?(&:present?)
+
     total_people = selected_member_ids.size + 1
     share_amount = (bill.total_amount / total_people).round(2)
 
-    bill.bill_shares.each do |share|
-      share.update(amount: share_amount)
-    end
+    selected_member_ids.each do |mid|
+      share = bill.bill_shares.find_or_initialize_by(member_id: mid)
+      
+      if is_manual
+        amount = manual_amounts[mid.to_s].to_f
+      else
+        amount = equal_share_amount
+      end
 
-    members_to_add.each do |member_id|
-      BillShare.create!(
-        bill: bill,
-        member_id: member_id,
-        amount: share_amount,
-        status: "unpaid"
-      )
+      share.amount = amount
+      share.status = "unpaid" if share.new_record?
+      share.save!
     end
   end
 end
