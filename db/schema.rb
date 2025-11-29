@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_11_19_185842) do
+ActiveRecord::Schema[8.0].define(version: 2025_11_29_051244) do
   create_table "bill_shares", force: :cascade do |t|
     t.integer "bill_id", null: false
     t.integer "member_id", null: false
@@ -69,6 +69,20 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_19_185842) do
     t.index ["user_id"], name: "index_members_on_user_id"
   end
 
+  create_table "payments", force: :cascade do |t|
+    t.integer "chore_group_id", null: false
+    t.integer "payer_id", null: false
+    t.integer "payee_id", null: false
+    t.decimal "amount", precision: 10, scale: 2, null: false
+    t.date "date", default: -> { "CURRENT_DATE" }
+    t.string "description"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["chore_group_id"], name: "index_payments_on_chore_group_id"
+    t.index ["payee_id"], name: "index_payments_on_payee_id"
+    t.index ["payer_id"], name: "index_payments_on_payer_id"
+  end
+
   create_table "sessions", force: :cascade do |t|
     t.integer "user_id", null: false
     t.string "ip_address"
@@ -121,6 +135,9 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_19_185842) do
   add_foreign_key "invitations", "users", column: "sender_id"
   add_foreign_key "members", "chore_groups"
   add_foreign_key "members", "users"
+  add_foreign_key "payments", "chore_groups"
+  add_foreign_key "payments", "members", column: "payee_id"
+  add_foreign_key "payments", "members", column: "payer_id"
   add_foreign_key "sessions", "users"
   add_foreign_key "task_groups", "chore_groups"
   add_foreign_key "tasks", "members"

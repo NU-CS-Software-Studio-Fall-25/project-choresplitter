@@ -1,9 +1,20 @@
 <%= form_with model: bill, url: (bill.persisted? ? bill_path(bill) : chore_group_bills_path(chore_group)), local: true, id: "bill-form" do |f| %>
   <%= f.hidden_field :chore_group_id, value: chore_group.id %>
   <%= f.hidden_field :member_id, value: current_member.id %>
+  
+  <%# Determine initial mode %>
+  <% initial_mode = 'equal' %>
+  <% if bill.persisted? %>
+     <% shares = bill.bill_shares %>
+     <% if shares.any? && (shares.distinct.count(:amount) > 1 || (shares.first.amount * (shares.count + 1) != bill.total_amount)) %>
+       <% initial_mode = 'manual' %>
+     <% end %>
+  <% end %>
+
+  <%= f.hidden_field :split_mode, value: initial_mode, id: "hidden_split_mode" %>
 
   <div id="math-error" class="alert alert-danger d-none">
-    The sum of shares does not match the total amount. Please adjust.
+    The sum of shares does not match the total amount.
   </div>
 
   <div class="form-group">
@@ -23,7 +34,7 @@
     <div class="d-flex justify-content-between align-items-end mb-2">
       <label class="small text-gray-700 m-0">Participants & Splitting</label>
       <div class="custom-control custom-switch">
-        <input type="checkbox" class="custom-control-input" id="splitModeToggle">
+        <input type="checkbox" class="custom-control-input" id="splitModeToggle" <%= 'checked' if initial_mode == 'manual' %>>
         <label class="custom-control-label small" for="splitModeToggle">Manual Splitting</label>
       </div>
     </div>
@@ -35,8 +46,17 @@
             <% mid = m.id %>
             <% is_me = (mid == current_member.id) %>
             
-            <% existing_share = bill.bill_shares.find { |s| s.member_id == mid } %>
-            <% initial_amount = existing_share&.amount || 0.00 %>
+            <%# Calculate initial display value safely %>
+            <% val = 0.00 %>
+            <% if bill.persisted? %>
+               <% if is_me %>
+                 <% others = bill.bill_shares.sum(:amount) %>
+                 <% val = bill.total_amount - others %>
+               <% else %>
+                 <% share = bill.bill_shares.find_by(member_id: mid) %>
+                 <% val = share&.amount || 0.00 %>
+               <% end %>
+            <% end %>
 
             <div class="col-12 mb-2 p-2 border-bottom participant-row">
               <div class="d-flex align-items-center justify-content-between">
@@ -44,16 +64,18 @@
                 <div class="custom-control custom-checkbox d-flex align-items-center">
                   <input
                     name="bill[shared_member_ids][]"
-                    class="custom-control-input <%= 'split-member-check' unless is_me %>"
+                    class="custom-control-input participant-check"
                     type="checkbox"
                     id="member_<%= mid %>"
                     value="<%= mid %>"
                     data-member-id="<%= mid %>"
                     data-is-me="<%= is_me %>"
-                    <%= is_me ? 'disabled' : 'checked' %>>
-                    <% if is_me %>
-                       <input type="hidden" name="bill[shared_member_ids][]" value="<%= mid %>">
-                    <% end %>
+                    <%= (is_me || (bill.persisted? && bill.bill_shares.exists?(member_id: mid))) ? 'checked' : '' %>
+                    <%= is_me ? 'disabled' : '' %>>
+                  
+                  <% if is_me %>
+                    <input type="hidden" name="bill[shared_member_ids][]" value="<%= mid %>">
+                  <% end %>
                   
                   <label class="custom-control-label" for="member_<%= mid %>">
                     <%= m.name || m.user&.name || "Member##{mid}" %>
@@ -70,10 +92,11 @@
                     step="0.01" 
                     min="0"
                     name="bill[manual_amounts][<%= mid %>]"
-                    class="form-control text-right share-amount-input <%= is_me ? 'my-share-input' : 'other-share-input' %>"
+                    class="form-control text-right share-input"
                     id="amount_<%= mid %>"
                     data-member-id="<%= mid %>"
-                    value="<%= initial_amount %>"
+                    data-is-me="<%= is_me %>"
+                    value="<%= val.round(2) %>"
                     readonly
                   >
                 </div>
@@ -96,190 +119,192 @@
 <% end %>
 
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-  const totalInput = document.getElementById('bill_total');
-  const modeToggle = document.getElementById('splitModeToggle');
-  const checkBoxes = Array.from(document.querySelectorAll('.split-member-check'));
-  const allAmountInputs = Array.from(document.querySelectorAll('.share-amount-input'));
-  const myInput = document.querySelector('.my-share-input'); 
-  const otherInputs = Array.from(document.querySelectorAll('.other-share-input')); 
-  const submitBtn = document.getElementById('submit-btn');
-  const infoText = document.getElementById('split-info');
-  const errorBox = document.getElementById('math-error');
+(function() {
+  function initBillSplitter() {
+    // 1. Safe Element Selection
+    const form = document.getElementById('bill-form');
+    if (!form) return; // Exit if not on the bill form page
 
-  let isManual = modeToggle.checked; 
+    const totalInput = document.getElementById('bill_total');
+    const modeToggle = document.getElementById('splitModeToggle');
+    const hiddenMode = document.getElementById('hidden_split_mode');
+    const infoText = document.getElementById('split-info');
+    const errorBox = document.getElementById('math-error');
+    const submitBtn = document.getElementById('submit-btn');
+    
+    // Select all inputs with specific class
+    const amountInputs = Array.from(document.querySelectorAll('.share-input'));
+    const checkboxes = Array.from(document.querySelectorAll('.participant-check'));
+    
+    // Find "Me" (Payer)
+    const myInput = amountInputs.find(i => i.dataset.isMe === 'true');
 
-  function calculateEqualSplit() {
-    if (isManual) return; 
+    // 2. Main Calculation Function
+    function calculate() {
+      const total = parseFloat(totalInput.value) || 0;
+      const isManual = modeToggle.checked;
 
-    const total = parseFloat(totalInput.value) || 0;
-    
-    const checkedOthers = checkBoxes.filter(cb => cb.checked);
-    const count = checkedOthers.length + 1; 
-    
-    const perPerson = total / count;
-    
-    let runningSum = 0;
-    
-    otherInputs.forEach(input => {
-      const mid = input.dataset.memberId;
-      const cb = document.querySelector(`input[data-member-id="${mid}"]`);
-      
-      if (cb && cb.checked) {
-        input.readOnly = true; 
-        input.value = perPerson.toFixed(2);
-        runningSum += parseFloat(input.value);
-        input.disabled = false;
-        // input.parentElement.classList.remove('d-none'); // 保持显示
+      // Update Hidden Field for Controller
+      hiddenMode.value = isManual ? 'manual' : 'equal';
+
+      // Gather Active Participants
+      let activeInputs = [];
+      amountInputs.forEach(input => {
+        const mid = input.dataset.memberId;
+        const cb = document.getElementById(`member_${mid}`);
+        const isActive = cb && (cb.checked || cb.disabled);
+
+        if (isActive) {
+          activeInputs.push(input);
+          // UI State
+          if (isManual) {
+            input.readOnly = false;
+            input.classList.add('bg-white');
+            input.classList.remove('bg-light');
+          } else {
+            input.readOnly = true;
+            input.classList.remove('bg-white');
+            input.classList.add('bg-light');
+          }
+        } else {
+          // Inactive members are zeroed out and readonly
+          input.value = "0.00";
+          input.readOnly = true;
+          input.classList.remove('bg-white');
+        }
+      });
+
+      // LOGIC BRANCHING
+      if (!isManual) {
+        // --- EQUAL MODE ---
+        infoText.textContent = "Equal split active";
+        errorBox.classList.add('d-none');
+        submitBtn.disabled = false;
+
+        const count = activeInputs.length;
+        if (count > 0 && total > 0) {
+          const split = total / count;
+          let runningSum = 0;
+          
+          // Set everyone else
+          activeInputs.forEach(input => {
+            if (input === myInput) return;
+            input.value = split.toFixed(2);
+            runningSum += parseFloat(input.value);
+          });
+
+          // Payer takes remainder
+          if (myInput) {
+            const myShare = total - runningSum;
+            myInput.value = (myShare > 0 ? myShare : 0).toFixed(2);
+          }
+        } else {
+          activeInputs.forEach(i => i.value = "0.00");
+        }
+
       } else {
-        input.readOnly = true;
-        input.value = 0.00;
-        input.disabled = true; 
-      }
-    });
-
-    myInput.readOnly = true; 
-    const myShare = total - runningSum;
-    myInput.value = myShare.toFixed(2);
-    
-    validateMath();
-  }
-
-  function handleManualChange(e) {
-    if (!isManual) {
-        calculateEqualSplit();
-        return;
-    }
-    
-    if (e.target === myInput) {
-        validateMath(); 
-        return;
-    }
-
-    const total = parseFloat(totalInput.value) || 0;
-    let othersSum = 0;
-
-    otherInputs.forEach(input => {
-      const cb = document.querySelector(`input[data-member-id="${input.dataset.memberId}"]`);
-      if (cb && cb.checked) {
-          const val = parseFloat(input.value) || 0;
-          othersSum += val;
-      }
-    });
-
-    const myNewShare = total - othersSum;
-    
-    myInput.value = myNewShare.toFixed(2);
-    
-    myInput.classList.add('bg-warning');
-    setTimeout(() => myInput.classList.remove('bg-warning'), 300);
-
-    validateMath();
-  }
-
-  function validateMath() {
-    const total = parseFloat(totalInput.value) || 0;
-    let sum = 0;
-    
-    allAmountInputs.forEach(input => {
-      sum += parseFloat(input.value) || 0;
-    });
-
-    const diff = Math.abs(total - sum);
-    const myShareVal = parseFloat(myInput.value);
-
-    let isValid = true;
-    let errorMsg = "";
-
-    if (diff > 0.05) {
-      isValid = false;
-      errorMsg = `Total mismatch. Sum: ${sum.toFixed(2)} vs Total: ${total.toFixed(2)}`;
-    } else if (myShareVal < 0) {
-      isValid = false;
-      errorMsg = "Your share cannot be negative. Please lower others' amounts.";
-      myInput.classList.add('is-invalid');
-    } else {
-      myInput.classList.remove('is-invalid');
-    }
-
-    if (!isValid) {
-      submitBtn.disabled = true;
-      errorBox.textContent = errorMsg;
-      errorBox.classList.remove('d-none');
-    } else {
-      submitBtn.disabled = false;
-      errorBox.classList.add('d-none');
-    }
-  }
-
-  modeToggle.addEventListener('change', function() {
-    isManual = this.checked;
-    
-    if (isManual) {
-      allAmountInputs.forEach(inp => {
-        const mid = inp.dataset.memberId;
-        const cb = document.querySelector(`input.split-member-check[value="${mid}"]`);
+        // --- MANUAL MODE ---
+        infoText.textContent = "Manual mode: Adjust amounts";
         
-        if (inp === myInput || (cb && cb.checked)) {
-            inp.readOnly = false;
-            inp.classList.add('bg-white');
+        // Sum Calculation
+        let currentSum = 0;
+        activeInputs.forEach(input => {
+           currentSum += (parseFloat(input.value) || 0);
+        });
+
+        // Validation
+        const diff = Math.abs(total - currentSum);
+        // My share check
+        const myVal = myInput ? (parseFloat(myInput.value) || 0) : 0;
+
+        let error = null;
+        if (diff > 0.05) {
+          error = `Sum ($${currentSum.toFixed(2)}) does not match Total ($${total.toFixed(2)})`;
+        } 
+        
+        // Update UI Validation State
+        if (error) {
+          errorBox.textContent = error;
+          errorBox.classList.remove('d-none');
+          submitBtn.disabled = true;
+        } else {
+          errorBox.classList.add('d-none');
+          submitBtn.disabled = false;
+        }
+      }
+    }
+
+    // 3. Event Listeners
+    // Use 'input' for real-time updates
+    totalInput.addEventListener('input', calculate);
+    modeToggle.addEventListener('change', calculate);
+    
+    checkboxes.forEach(cb => {
+      cb.addEventListener('change', calculate);
+    });
+
+    amountInputs.forEach(input => {
+      input.addEventListener('input', () => {
+        // If in manual mode, typing updates validation only
+        // If in equal mode, typing is blocked by readonly anyway
+        if (modeToggle.checked) {
+           calculate();
         }
       });
-      infoText.textContent = "Manual mode: Edit amounts. 'You' will absorb the remainder.";
-    } else {
-      allAmountInputs.forEach(inp => {
-        inp.readOnly = true; 
-        inp.classList.remove('bg-white');
-      });
-      calculateEqualSplit();
-      infoText.textContent = "Equal split active";
-    }
-  });
+    });
 
-  totalInput.addEventListener('input', calculateEqualSplit);
-  totalInput.addEventListener('change', calculateEqualSplit); 
+    // 4. Manual "Auto-fill Remainder" Helper
+    // If I edit someone else's amount, adjust MY amount automatically to keep total correct
+    amountInputs.forEach(input => {
+      if (input === myInput) return; // Don't auto-adjust if I edit myself
+      
+      input.addEventListener('input', () => {
+        if (!modeToggle.checked) return;
+        
+        const total = parseFloat(totalInput.value) || 0;
+        let othersSum = 0;
+        
+        amountInputs.forEach(other => {
+          const mid = other.dataset.memberId;
+          const cb = document.getElementById(`member_${mid}`);
+          if (other !== myInput && cb && cb.checked) {
+            othersSum += (parseFloat(other.value) || 0);
+          }
+        });
+
+        if (myInput) {
+          const remainder = total - othersSum;
+          myInput.value = remainder.toFixed(2); // Allow negative temporarily
+          // Trigger calculate to update validation state (red box if negative)
+          calculate();
+        }
+      });
+    });
+
+    // 5. Initial Run
+    calculate();
+  }
+
+  // Hook into Turbo load event (Rails 7 standard)
+  document.addEventListener("turbo:load", initBillSplitter);
   
-  checkBoxes.forEach(cb => {
-    cb.addEventListener('change', () => {
-        const inp = document.getElementById(`amount_${cb.value}`);
-        
-        if (!cb.checked) {
-            inp.value = 0;
-            inp.readOnly = true;
-        } else if (isManual) {
-            inp.readOnly = false;
-            inp.classList.add('bg-white');
-        }
-        
-        if (!isManual) calculateEqualSplit();
-        else validateMath(); 
-    });
-  });
+  // Hook into DOMContentLoaded (Fallback for first load / non-turbo)
+  document.addEventListener("DOMContentLoaded", initBillSplitter);
+  
+  // Execute immediately in case we are inside a partial render or re-render
+  initBillSplitter();
 
-  allAmountInputs.forEach(inp => {
-    inp.addEventListener('input', handleManualChange);
-  });
-
-  calculateEqualSplit(); 
-});
+})();
 </script>
 
 <style>
-.share-amount-input[readonly] {
-    background-color: #f8f9fa;
-    border: 1px solid #e3e6f0;
-    color: #6c757d;
-    cursor: not-allowed;
+.share-input[readonly] {
+  background-color: #eaecf4;
+  cursor: not-allowed;
+  color: #6e707e;
 }
-.share-amount-input.bg-white {
-    background-color: #fff !important;
-    cursor: text;
-}
-.participant-row:last-child {
-    border-bottom: none !important;
-}
-.bg-warning {
-    transition: background-color 0.2s ease;
-    background-color: #f6c23e !important;
+.share-input.bg-white {
+  background-color: #ffffff !important;
+  border-color: #4e73df;
 }
 </style>
