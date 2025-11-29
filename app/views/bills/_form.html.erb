@@ -1,6 +1,21 @@
-<%= form_with model: bill, url: (bill.persisted? ? bill_path(bill) : chore_group_bills_path(chore_group)), local: true do |f| %>
+<%= form_with model: bill, url: (bill.persisted? ? bill_path(bill) : chore_group_bills_path(chore_group)), local: true, id: "bill-form" do |f| %>
   <%= f.hidden_field :chore_group_id, value: chore_group.id %>
   <%= f.hidden_field :member_id, value: current_member.id %>
+  
+  <%# Determine initial mode %>
+  <% initial_mode = 'equal' %>
+  <% if bill.persisted? %>
+     <% shares = bill.bill_shares %>
+     <% if shares.any? && (shares.distinct.count(:amount) > 1 || (shares.first.amount * (shares.count + 1) != bill.total_amount)) %>
+       <% initial_mode = 'manual' %>
+     <% end %>
+  <% end %>
+
+  <%= f.hidden_field :split_mode, value: initial_mode, id: "hidden_split_mode" %>
+
+  <div id="math-error" class="alert alert-danger d-none">
+    The sum of shares does not match the total amount.
+  </div>
 
   <div class="form-group">
     <label class="small mb-1 text-gray-700">Description</label>
@@ -11,93 +26,285 @@
     <label class="small mb-1 text-gray-700">Total Amount</label>
     <div class="input-group">
       <div class="input-group-prepend"><span class="input-group-text">$</span></div>
-      <%= f.number_field :total_amount, step: 0.01, min: 0.01, id: "bill_total", class: "form-control", placeholder: "0.00" %>
+      <%= f.number_field :total_amount, step: 0.01, min: 0.01, id: "bill_total", class: "form-control", placeholder: "0.00", required: true %>
     </div>
-    <small class="form-text text-muted">
-      Will be split equally among selected members (payer included).
-    </small>
   </div>
 
   <div class="form-group">
-    <label class="small mb-2 text-gray-700">Participants</label>
+    <div class="d-flex justify-content-between align-items-end mb-2">
+      <label class="small text-gray-700 m-0">Participants & Splitting</label>
+      <div class="custom-control custom-switch">
+        <input type="checkbox" class="custom-control-input" id="splitModeToggle" <%= 'checked' if initial_mode == 'manual' %>>
+        <label class="custom-control-label small" for="splitModeToggle">Manual Splitting</label>
+      </div>
+    </div>
+
     <div class="card border-left-primary">
       <div class="card-body py-2">
         <div class="row">
           <% members_for_split.each do |m| %>
             <% mid = m.id %>
             <% is_me = (mid == current_member.id) %>
-            <div class="col-6 col-md-4 mb-2">
-              <div class="custom-control custom-checkbox">
-                <input
-                  name="bill[shared_member_ids][]"
-                  class="custom-control-input <%= 'split-member' unless is_me %>"
-                  type="checkbox"
-                  id="member_<%= mid %>"
-                  value="<%= mid %>"
-                  <%= is_me ? 'disabled' : 'checked' %>>
-                <label class="custom-control-label" for="member_<%= mid %>">
-                  <%= m.name || m.user&.email_address || m.user&.name || "Member##{mid}" %>
-                  <% if is_me %><span class="badge badge-light ml-1">you</span><% end %>
-                </label>
+            
+            <%# Calculate initial display value safely %>
+            <% val = 0.00 %>
+            <% if bill.persisted? %>
+               <% if is_me %>
+                 <% others = bill.bill_shares.sum(:amount) %>
+                 <% val = bill.total_amount - others %>
+               <% else %>
+                 <% share = bill.bill_shares.find_by(member_id: mid) %>
+                 <% val = share&.amount || 0.00 %>
+               <% end %>
+            <% end %>
+
+            <div class="col-12 mb-2 p-2 border-bottom participant-row">
+              <div class="d-flex align-items-center justify-content-between">
+                
+                <div class="custom-control custom-checkbox d-flex align-items-center">
+                  <input
+                    name="bill[shared_member_ids][]"
+                    class="custom-control-input participant-check"
+                    type="checkbox"
+                    id="member_<%= mid %>"
+                    value="<%= mid %>"
+                    data-member-id="<%= mid %>"
+                    data-is-me="<%= is_me %>"
+                    <%= (is_me || (bill.persisted? && bill.bill_shares.exists?(member_id: mid))) ? 'checked' : '' %>
+                    <%= is_me ? 'disabled' : '' %>>
+                  
+                  <% if is_me %>
+                    <input type="hidden" name="bill[shared_member_ids][]" value="<%= mid %>">
+                  <% end %>
+                  
+                  <label class="custom-control-label" for="member_<%= mid %>">
+                    <%= m.name || m.user&.name || "Member##{mid}" %>
+                    <% if is_me %><span class="badge badge-primary ml-1">You (Payer)</span><% end %>
+                  </label>
+                </div>
+
+                <div class="input-group input-group-sm" style="width: 120px;">
+                  <div class="input-group-prepend">
+                    <span class="input-group-text border-0 bg-transparent">$</span>
+                  </div>
+                  <input 
+                    type="number" 
+                    step="0.01" 
+                    min="0"
+                    name="bill[manual_amounts][<%= mid %>]"
+                    class="form-control text-right share-input"
+                    id="amount_<%= mid %>"
+                    data-member-id="<%= mid %>"
+                    data-is-me="<%= is_me %>"
+                    value="<%= val.round(2) %>"
+                    readonly
+                  >
+                </div>
+
               </div>
             </div>
           <% end %>
         </div>
 
-        <div class="mt-2">
-          <button class="btn btn-sm btn-outline-secondary" id="toggle-select-others" type="button">
-            Toggle Select Others
-          </button>
+        <div class="mt-2 text-right">
+           <small class="text-muted" id="split-info">Equal split active</small>
         </div>
       </div>
     </div>
-
-    <div class="mt-2 small text-muted" id="split-preview">
-      Selected: <span id="selected-count">0</span> people (excluding you).
-      &nbsp;Each pays: <strong>$<span id="each-amount">0.00</span></strong>
-    </div>
   </div>
 
-  <% cancel_url = bill.persisted? ? bill_path(bill) : chore_group_bills_path(chore_group) %>
-
-  <div class="d-flex">
-    <%= f.submit (bill.persisted? ? "Save Changes" : "Create Bill"),
-          class: "btn btn-primary mr-2" %>
+  <div class="d-flex mt-3">
+    <%= f.submit (bill.persisted? ? "Save Changes" : "Create Bill"), class: "btn btn-primary mr-2", id: "submit-btn" %>
   </div>
 <% end %>
 
 <script>
-(function () {
-  const meId = parseInt(
-    document.querySelector('input[name="bill[member_id]"]')?.value,
-    10
-  );
-  function updatePreview() {
-    const totalEl = document.getElementById('bill_total');
-    const boxes = Array.from(document.querySelectorAll('.split-member'));
-    const total = parseFloat(totalEl && totalEl.value) || 0;
-    const selectedOthers = boxes.filter(b => b.checked && parseInt(b.value) !== meId).length;
-    const people = selectedOthers + 1;
-    const each = people > 0 ? (total / people) : 0;
-    const c1 = document.getElementById('selected-count');
-    const c2 = document.getElementById('each-amount');
-    if (c1) c1.innerText = selectedOthers;
-    if (c2) c2.innerText = each.toFixed(2);
-  }
-  document.addEventListener('input', e => {
-    if (e.target.matches('#bill_total, .split-member')) updatePreview();
-  });
-  const toggleBtn = document.getElementById('toggle-select-others');
-  if (toggleBtn) {
-    toggleBtn.addEventListener('click', () => {
-      const boxes = Array.from(document.querySelectorAll('.split-member'));
-      const others = boxes.filter(b => parseInt(b.value) !== meId);
-      const checkedCount = others.filter(b => b.checked).length;
-      const targetState = checkedCount < (others.length / 2);
-      others.forEach(b => b.checked = targetState);
-      updatePreview();
+(function() {
+  function initBillSplitter() {
+    // 1. Safe Element Selection
+    const form = document.getElementById('bill-form');
+    if (!form) return; // Exit if not on the bill form page
+
+    const totalInput = document.getElementById('bill_total');
+    const modeToggle = document.getElementById('splitModeToggle');
+    const hiddenMode = document.getElementById('hidden_split_mode');
+    const infoText = document.getElementById('split-info');
+    const errorBox = document.getElementById('math-error');
+    const submitBtn = document.getElementById('submit-btn');
+    
+    // Select all inputs with specific class
+    const amountInputs = Array.from(document.querySelectorAll('.share-input'));
+    const checkboxes = Array.from(document.querySelectorAll('.participant-check'));
+    
+    // Find "Me" (Payer)
+    const myInput = amountInputs.find(i => i.dataset.isMe === 'true');
+
+    // 2. Main Calculation Function
+    function calculate() {
+      const total = parseFloat(totalInput.value) || 0;
+      const isManual = modeToggle.checked;
+
+      // Update Hidden Field for Controller
+      hiddenMode.value = isManual ? 'manual' : 'equal';
+
+      // Gather Active Participants
+      let activeInputs = [];
+      amountInputs.forEach(input => {
+        const mid = input.dataset.memberId;
+        const cb = document.getElementById(`member_${mid}`);
+        const isActive = cb && (cb.checked || cb.disabled);
+
+        if (isActive) {
+          activeInputs.push(input);
+          // UI State
+          if (isManual) {
+            input.readOnly = false;
+            input.classList.add('bg-white');
+            input.classList.remove('bg-light');
+          } else {
+            input.readOnly = true;
+            input.classList.remove('bg-white');
+            input.classList.add('bg-light');
+          }
+        } else {
+          // Inactive members are zeroed out and readonly
+          input.value = "0.00";
+          input.readOnly = true;
+          input.classList.remove('bg-white');
+        }
+      });
+
+      // LOGIC BRANCHING
+      if (!isManual) {
+        // --- EQUAL MODE ---
+        infoText.textContent = "Equal split active";
+        errorBox.classList.add('d-none');
+        submitBtn.disabled = false;
+
+        const count = activeInputs.length;
+        if (count > 0 && total > 0) {
+          const split = total / count;
+          let runningSum = 0;
+          
+          // Set everyone else
+          activeInputs.forEach(input => {
+            if (input === myInput) return;
+            input.value = split.toFixed(2);
+            runningSum += parseFloat(input.value);
+          });
+
+          // Payer takes remainder
+          if (myInput) {
+            const myShare = total - runningSum;
+            myInput.value = (myShare > 0 ? myShare : 0).toFixed(2);
+          }
+        } else {
+          activeInputs.forEach(i => i.value = "0.00");
+        }
+
+      } else {
+        // --- MANUAL MODE ---
+        infoText.textContent = "Manual mode: Adjust amounts";
+        
+        // Sum Calculation
+        let currentSum = 0;
+        activeInputs.forEach(input => {
+           currentSum += (parseFloat(input.value) || 0);
+        });
+
+        // Validation
+        const diff = Math.abs(total - currentSum);
+        // My share check
+        const myVal = myInput ? (parseFloat(myInput.value) || 0) : 0;
+
+        let error = null;
+        if (diff > 0.05) {
+          error = `Sum ($${currentSum.toFixed(2)}) does not match Total ($${total.toFixed(2)})`;
+        } 
+        
+        // Update UI Validation State
+        if (error) {
+          errorBox.textContent = error;
+          errorBox.classList.remove('d-none');
+          submitBtn.disabled = true;
+        } else {
+          errorBox.classList.add('d-none');
+          submitBtn.disabled = false;
+        }
+      }
+    }
+
+    // 3. Event Listeners
+    // Use 'input' for real-time updates
+    totalInput.addEventListener('input', calculate);
+    modeToggle.addEventListener('change', calculate);
+    
+    checkboxes.forEach(cb => {
+      cb.addEventListener('change', calculate);
     });
+
+    amountInputs.forEach(input => {
+      input.addEventListener('input', () => {
+        // If in manual mode, typing updates validation only
+        // If in equal mode, typing is blocked by readonly anyway
+        if (modeToggle.checked) {
+           calculate();
+        }
+      });
+    });
+
+    // 4. Manual "Auto-fill Remainder" Helper
+    // If I edit someone else's amount, adjust MY amount automatically to keep total correct
+    amountInputs.forEach(input => {
+      if (input === myInput) return; // Don't auto-adjust if I edit myself
+      
+      input.addEventListener('input', () => {
+        if (!modeToggle.checked) return;
+        
+        const total = parseFloat(totalInput.value) || 0;
+        let othersSum = 0;
+        
+        amountInputs.forEach(other => {
+          const mid = other.dataset.memberId;
+          const cb = document.getElementById(`member_${mid}`);
+          if (other !== myInput && cb && cb.checked) {
+            othersSum += (parseFloat(other.value) || 0);
+          }
+        });
+
+        if (myInput) {
+          const remainder = total - othersSum;
+          myInput.value = remainder.toFixed(2); // Allow negative temporarily
+          // Trigger calculate to update validation state (red box if negative)
+          calculate();
+        }
+      });
+    });
+
+    // 5. Initial Run
+    calculate();
   }
-  document.addEventListener('DOMContentLoaded', updatePreview);
+
+  // Hook into Turbo load event (Rails 7 standard)
+  document.addEventListener("turbo:load", initBillSplitter);
+  
+  // Hook into DOMContentLoaded (Fallback for first load / non-turbo)
+  document.addEventListener("DOMContentLoaded", initBillSplitter);
+  
+  // Execute immediately in case we are inside a partial render or re-render
+  initBillSplitter();
+
 })();
 </script>
+
+<style>
+.share-input[readonly] {
+  background-color: #eaecf4;
+  cursor: not-allowed;
+  color: #6e707e;
+}
+.share-input.bg-white {
+  background-color: #ffffff !important;
+  border-color: #4e73df;
+}
+</style>

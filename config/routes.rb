@@ -29,8 +29,11 @@ Rails.application.routes.draw do
     resources :bills, only: [ :index, :new, :create ], shallow: true do
       resources :bill_shares, only: [ :create, :update, :destroy ], shallow: true
     end
+    
+    resources :payments, only: [:create] 
+
     member do
-      post   :join
+      post  :join
       delete :leave
     end
     resources :invitations, only: [:create]
@@ -58,7 +61,7 @@ Rails.application.routes.draw do
   # resources :chore_groups
   resources :tasks do
     collection do
-      get :completed  # global completed tasks
+      get :completed   # global completed tasks
     end
 
     member do
