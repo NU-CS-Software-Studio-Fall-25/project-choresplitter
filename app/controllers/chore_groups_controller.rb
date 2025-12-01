@@ -1,6 +1,6 @@
 class ChoreGroupsController < ApplicationController
   # Load by CODE instead of numeric id
-  before_action :set_chore_group, only: [:show, :edit, :update, :destroy, :leave]
+  before_action :set_chore_group, only: [ :show, :edit, :update, :destroy, :leave ]
 
   def index
     @chore_groups = ChoreGroup.includes(:users).order(created_at: :desc)
@@ -114,7 +114,7 @@ class ChoreGroupsController < ApplicationController
   end
 
   def join
-    if request.get?
+    if request.get? || request.head?
       # /chore_groups/join => render the search form
       return render :join
     end

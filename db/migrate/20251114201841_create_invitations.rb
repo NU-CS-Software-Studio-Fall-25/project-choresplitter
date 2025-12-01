@@ -9,7 +9,7 @@ class CreateInvitations < ActiveRecord::Migration[8.0]
       t.timestamps
     end
 
-    add_index :invitations, [:chore_group_id, :recipient_id, :status],
+    add_index :invitations, [ :chore_group_id, :recipient_id, :status ],
               name: "index_invitations_on_group_recipient_status"
   end
 end

@@ -3,7 +3,7 @@ class OmniauthCallbacksController < ApplicationController
   skip_before_action :require_login, :require_authentication, raise: false
 
   def create
-    auth = request.env['omniauth.auth']
+    auth = request.env["omniauth.auth"]
     user = User.from_omniauth(auth)
 
     if user.persisted?

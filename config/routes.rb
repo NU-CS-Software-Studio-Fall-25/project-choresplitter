@@ -18,10 +18,10 @@ Rails.application.routes.draw do
   get "about" => "about#index"
   get "home", to: "home#index"
 
-  post '/auth/:provider/callback', to: 'omniauth_callbacks#create'
-  get '/auth/:provider/callback', to: 'omniauth_callbacks#create'
-  get '/auth/failure', to: 'omniauth_callbacks#failure'
-  
+  post "/auth/:provider/callback", to: "omniauth_callbacks#create"
+  get "/auth/:provider/callback", to: "omniauth_callbacks#create"
+  get "/auth/failure", to: "omniauth_callbacks#failure"
+
   resources :chore_groups do
     resources :task_groups, only: [ :show ] do
       resources :tasks
@@ -29,15 +29,15 @@ Rails.application.routes.draw do
     resources :bills, only: [ :index, :new, :create ], shallow: true do
       resources :bill_shares, only: [ :create, :update, :destroy ], shallow: true
     end
-    
-    resources :payments, only: [:create] 
+
+    resources :payments, only: [ :create ]
 
     member do
-      post  :join
+      post :join
       delete :leave
     end
-    resources :invitations, only: [:create]
-    resources :invitations, only: [:create]
+    resources :invitations, only: [ :create ]
+    resources :invitations, only: [ :create ]
     collection do
       get :join
       get :new_chore_group
@@ -46,18 +46,18 @@ Rails.application.routes.draw do
       post :search
     end
 
-    resources :members, only: [:index, :destroy]
+    resources :members, only: [ :index, :destroy ]
 
-    resources :members, only: [:index, :destroy]
+    resources :members, only: [ :index, :destroy ]
   end
 
   resource :session, only: [ :new, :create, :destroy ]
   resource :password, only: [ :new, :create, :edit, :update ]
 
   resources :users
-  resources :sessions, only: [ :new, :create, :destroy ]
+  # resources :sessions, only: [ :new, :create, :destroy ]
   resources :bills, only: [ :index, :show, :edit, :update, :destroy ]
-  resources :invitations, only: [:index, :update]
+  resources :invitations, only: [ :index, :update ]
   # resources :chore_groups
   resources :tasks do
     collection do
@@ -73,5 +73,5 @@ Rails.application.routes.draw do
 
   # root "chore_groups#index"
   # root "sessions#new"
-  root "home#index"
+  root to: "home#index"
 end

@@ -2,7 +2,7 @@ class MembersController < ApplicationController
   before_action :set_chore_group
   before_action :set_current_member
   before_action :ensure_admin!
-  before_action :set_member, only: [:destroy]
+  before_action :set_member, only: [ :destroy ]
 
   # Optional: list members for an Admin tab or API
   def index
@@ -10,7 +10,7 @@ class MembersController < ApplicationController
 
     respond_to do |format|
       format.html # renders app/views/members/index.html.erb if present
-      format.json { render json: @members.as_json(only: [:id, :name, :user_id, :created_at]) }
+      format.json { render json: @members.as_json(only: [ :id, :name, :user_id, :created_at ]) }
     end
   end
 

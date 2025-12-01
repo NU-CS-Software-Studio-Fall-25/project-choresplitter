@@ -1,8 +1,8 @@
 # app/controllers/email_verifications_controller.rb
 class EmailVerificationsController < ApplicationController
-  # Add this line
-  # This skips BOTH filters
-    skip_before_action :require_login, :require_authentication, only: [:edit], raise: false
+    # Add this line
+    # This skips BOTH filters
+    skip_before_action :require_login, :require_authentication, only: [ :edit ], raise: false
 
   def edit
     user = User.find_by(email_verification_token: params[:token])

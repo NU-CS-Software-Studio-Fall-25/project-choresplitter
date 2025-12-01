@@ -11,9 +11,9 @@ class Payment < ApplicationRecord
 
   def reconcile_bill_shares
     unpaid_shares = BillShare.joins(:bill)
-                             .where(member_id: payer_id, status: 'unpaid')
+                             .where(member_id: payer_id, status: "unpaid")
                              .where(bills: { member_id: payee_id })
-                             .order('bills.created_at ASC')
+                             .order("bills.created_at ASC")
 
     remaining_payment = amount
 
@@ -21,11 +21,11 @@ class Payment < ApplicationRecord
       break if remaining_payment <= 0
 
       if share.amount <= remaining_payment
-        share.update!(status: 'paid')
+        share.update!(status: "paid")
         remaining_payment -= share.amount
       else
         # new_amount = share.amount - remaining_payment
-        # share.update!(amount: new_amount) 
+        # share.update!(amount: new_amount)
         remaining_payment = 0
       end
     end

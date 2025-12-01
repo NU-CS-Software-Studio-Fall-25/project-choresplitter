@@ -9,7 +9,7 @@ class ChoreGroup < ApplicationRecord
 
   has_many :bills, dependent: :destroy
   has_many :bill_shares, through: :bills
-  
+
   has_many :payments, dependent: :destroy
 
   has_many :invitations, dependent: :destroy

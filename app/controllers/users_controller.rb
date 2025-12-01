@@ -24,7 +24,7 @@ class UsersController < ApplicationController
     if @user.save
       # Send the verification email
       UserMailer.verification(@user).deliver_later
-      
+
       # Redirect to the sign-in page with a notice
       redirect_to new_session_path, notice: "User created. Please check your email to verify your account."
     else

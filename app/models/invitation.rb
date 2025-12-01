@@ -7,7 +7,7 @@ class Invitation < ApplicationRecord
 
   validates :status, inclusion: { in: STATUSES }
   validates :recipient_id, uniqueness: {
-    scope: [:chore_group_id, :status],
+    scope: [ :chore_group_id, :status ],
     conditions: -> { where(status: "pending") },
     message: "already has a pending invite to this group"
   }
