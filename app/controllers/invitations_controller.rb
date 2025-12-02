@@ -1,6 +1,6 @@
 class InvitationsController < ApplicationController
-  before_action :set_chore_group, only: [:create]
-  before_action :ensure_group_admin!, only: [:create]
+  before_action :set_chore_group, only: [ :create ]
+  before_action :ensure_group_admin!, only: [ :create ]
 
   # GET /invitations
   # "Inbox" – invitations for the current user

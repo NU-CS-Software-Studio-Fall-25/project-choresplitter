@@ -18,9 +18,9 @@ class SessionsController < ApplicationController
 
     if user&.authenticate(password) # requires has_secure_password + password_digest
       if user.email_verified? # <-- CHECK VERIFICATION
-        reset_session          
+        reset_session
         session[:user_id] = user.id
-        start_new_session_for(user)  
+        start_new_session_for(user)
         redirect_to users_path, notice: "Signed in!"
       else
         # Password is correct, but email is not verified

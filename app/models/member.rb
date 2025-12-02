@@ -24,7 +24,7 @@ class Member < ApplicationRecord
     payments_they_made = Payment.where(payer: other_member, payee: self).sum(:amount)
 
     final_balance = initial_balance - payments_they_made + payments_i_made
-    
-    return final_balance
+
+    final_balance
   end
 end

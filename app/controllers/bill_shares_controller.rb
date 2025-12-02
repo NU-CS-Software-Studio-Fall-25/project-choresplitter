@@ -1,6 +1,6 @@
 class BillSharesController < ApplicationController
   before_action :set_bill_share, only: [ :show, :edit, :update, :destroy ]
-  before_action :require_share_participant, only: [:edit, :update]
+  before_action :require_share_participant, only: [ :edit, :update ]
   # GET /bill_shares
   def index
     @bill_shares = if params[:bill_id].present?
@@ -71,7 +71,7 @@ class BillSharesController < ApplicationController
       redirect_to root_path, alert: "You are not a member of this group." and return
     end
 
-    allowed_member_ids = [@bill_share.member_id, bill.member_id]
+    allowed_member_ids = [ @bill_share.member_id, bill.member_id ]
 
     unless allowed_member_ids.include?(member.id)
       redirect_to bill_path(bill), alert: "You are not allowed to update this share." and return
@@ -81,5 +81,4 @@ class BillSharesController < ApplicationController
     #   redirect_to bill_path(bill), alert: "Only the debtor can change this status." and return
     # end
   end
-
 end

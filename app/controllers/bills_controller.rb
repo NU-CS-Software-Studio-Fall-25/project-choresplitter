@@ -1,21 +1,21 @@
 class BillsController < ApplicationController
-  before_action :set_bill, only: [:show, :edit, :update, :destroy]
-  before_action :set_chore_group_for_index, only: [:index]
-  before_action :set_chore_group, only: [:new, :create]
-  before_action :require_bill_owner, only: [:edit, :update]
+  before_action :set_bill, only: [ :show, :edit, :update, :destroy ]
+  before_action :set_chore_group_for_index, only: [ :index ]
+  before_action :set_chore_group, only: [ :new, :create ]
+  before_action :require_bill_owner, only: [ :edit, :update ]
 
   def index
     if @chore_group.present? && @current_member.present?
       @member_balances = []
       other_members = @chore_group.members.where.not(id: @current_member.id)
-      
+
       other_members.each do |m|
-        balance = @current_member.net_balance_with(m) 
-        if balance.abs > 0.01 
+        balance = @current_member.net_balance_with(m)
+        if balance.abs > 0.01
           @member_balances << { member: m, balance: balance }
         end
       end
-      
+
       # These calculations rely on the results of net_balance_with, which is now correct
       @you_are_creditor_unpaid = @member_balances.sum { |b| b[:balance] > 0 ? b[:balance] : 0 }
       @you_owe_unpaid = @member_balances.sum { |b| b[:balance] < 0 ? b[:balance].abs : 0 }
@@ -29,10 +29,10 @@ class BillsController < ApplicationController
 
       your_shares_scope = BillShare
         .joins(:bill)
-        .includes(bill: [:member, :chore_group])
+        .includes(bill: [ :member, :chore_group ])
         .where(member_id: @current_member.id, bills: { chore_group_id: @chore_group.id })
         .order("bills.created_at DESC")
-      
+
       @total_you_paid = you_paid_scope.sum(:total_amount)
 
       involved_via_shares_count = BillShare
@@ -61,7 +61,7 @@ class BillsController < ApplicationController
 
       your_shares_scope = BillShare
         .joins(:bill)
-        .includes(bill: [:member, :chore_group])
+        .includes(bill: [ :member, :chore_group ])
         .where(member_id: my_member_ids)
         .order("bills.created_at DESC")
 
@@ -94,13 +94,13 @@ class BillsController < ApplicationController
         .sum(:amount)
 
       # 5. Final Calculation: Netting the balances
-      
+
       # Net Credit (Others Owe Me) = (Total Debt Owed To Me) - (Payments I Received) - (Debt I Paid Off via Payments I Made)
       # Note: If payments I made are greater than my debt, they represent overpayment/credit toward future debts.
-      
+
       # Global Net Balance: (Debts owed TO me) - (Debts owed BY me) + (Payments I made) - (Payments I received)
       global_net = debt_owed_to_me - debt_owed_by_me + payments_i_made - payments_i_received
-      
+
       # Assigning the correct values to the display variables
       if global_net > 0
         # If net is positive, others owe me (I am the creditor)
@@ -133,8 +133,8 @@ class BillsController < ApplicationController
 
   def create
     # 1. Capture split_mode from params (defaults to equal if missing)
-    split_mode = params[:bill][:split_mode] || 'equal'
-    
+    split_mode = params[:bill][:split_mode] || "equal"
+
     shared_member_ids = (params[:bill][:shared_member_ids] || []).reject(&:blank?).map(&:to_i)
     manual_amounts = params[:bill][:manual_amounts] || {}
 
@@ -162,7 +162,7 @@ class BillsController < ApplicationController
   end
 
   def update
-    split_mode = params[:bill][:split_mode] || 'equal'
+    split_mode = params[:bill][:split_mode] || "equal"
     shared_member_ids = (params[:bill][:shared_member_ids] || []).reject(&:blank?).map(&:to_i)
     manual_amounts = params[:bill][:manual_amounts] || {}
 
@@ -263,28 +263,28 @@ class BillsController < ApplicationController
 
   def update_bill_shares(bill, selected_member_ids, manual_amounts, split_mode)
     selected_member_ids = selected_member_ids.map(&:to_i)
-    selected_member_ids -= [bill.member_id]
+    selected_member_ids -= [ bill.member_id ]
 
     Bill.transaction do
       bill.bill_shares.where.not(member_id: selected_member_ids).destroy_all
-      
+
       bill.bill_shares.reload
 
-      if split_mode != 'manual'
+      if split_mode != "manual"
         total_people = selected_member_ids.size + 1
         equal_share_amount = total_people > 0 ? (bill.total_amount / total_people).round(2) : 0
       end
 
       selected_member_ids.each do |mid|
         share = BillShare.find_or_initialize_by(bill_id: bill.id, member_id: mid)
-        
-        if split_mode == 'manual'
+
+        if split_mode == "manual"
           share.amount = manual_amounts[mid.to_s].to_f
         else
           share.amount = equal_share_amount
         end
         share.status = "unpaid" if share.new_record?
-        
+
         share.save!
       end
     end

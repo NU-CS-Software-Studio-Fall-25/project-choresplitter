@@ -9,7 +9,7 @@ class PaymentsController < ApplicationController
     @payment = Payment.new(
       chore_group: @chore_group,
       payer: @payer,
-      payee: @payee, 
+      payee: @payee,
       amount: amount,
       description: "Settlement via Settle Up button"
     )
@@ -17,15 +17,15 @@ class PaymentsController < ApplicationController
     if @payment.save
       # Logic added here to actually update the debt status
       settle_debt(@payer, @payee, amount)
-      
+
       redirect_to chore_group_bills_path(@chore_group), notice: "Settled up successfully!"
     else
       redirect_to chore_group_bills_path(@chore_group), alert: "Failed to settle up."
     end
   end
-  
+
   private
-  
+
   def set_chore_group
      @chore_group = ChoreGroup.find_by(code: params[:chore_group_id])
   end
@@ -36,8 +36,8 @@ class PaymentsController < ApplicationController
     shares = BillShare.joins(:bill)
                       .where(member_id: payer.id)            # The debtor
                       .where(bills: { member_id: payee.id }) # The creditor (bill owner)
-                      .where(status: 'unpaid')
-                      .order('bills.created_at ASC')         # Settle oldest bills first
+                      .where(status: "unpaid")
+                      .order("bills.created_at ASC")         # Settle oldest bills first
 
     remaining = payment_amount
 
@@ -47,10 +47,10 @@ class PaymentsController < ApplicationController
       if remaining >= share.amount
         # Case 1: Payment covers the entire share
         remaining -= share.amount
-        share.update!(status: 'paid')
+        share.update!(status: "paid")
       else
         # Case 2: Partial payment
-        # We STOP processing the debt here. The BillShare record remains untouched 
+        # We STOP processing the debt here. The BillShare record remains untouched
         # (amount=$10, status='unpaid'). The Payment history itself handles the offset.
         break
       end

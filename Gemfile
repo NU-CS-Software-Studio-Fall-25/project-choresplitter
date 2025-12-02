@@ -53,10 +53,10 @@ gem "thruster", require: false
 
 gem "pwa"
 
-gem 'omniauth'
-gem 'omniauth-google-oauth2'
-gem 'omniauth-rails_csrf_protection' # Required for security
-gem 'dotenv-rails' # Recommended for managing API keys
+gem "omniauth"
+gem "omniauth-google-oauth2"
+gem "omniauth-rails_csrf_protection" # Required for security
+gem "dotenv-rails" # Recommended for managing API keys
 
 group :production do
   gem "pg", "~> 1.1"
