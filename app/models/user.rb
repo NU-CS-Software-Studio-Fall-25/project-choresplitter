@@ -19,20 +19,16 @@ class User < ApplicationRecord
 
   normalizes :email_address, with: ->(e) { e.strip.downcase }
 
-  # Define a regex for the special character and uppercase requirement
-  PASSWORD_REQUIREMENTS = /\A
-    (?=.{8,})           # Must be at least 8 characters long
-    (?=.*[A-Z])         # Must contain at least one uppercase letter
-    (?=.*[^A-Za-z0-9])  # Must contain at least one special character
-  \z/x
+ # Define a regex for the special character and uppercase requirement
+ PASSWORD_REQUIREMENTS = /\A(?=.{8,})(?=.*[A-Z])(?=.*[^A-Za-z0-9]).*\z/x
 
-  # Add the validation
-  validates :password,
-    format: {
-      with: PASSWORD_REQUIREMENTS,
-      message: "must be at least 8 characters long and include one uppercase letter and one special character"
-    },
-    if: -> { password.present? || password_confirmation.present? }
+validates :password,
+  format: {
+    with: PASSWORD_REQUIREMENTS,
+    message: "must be at least 8 characters long and include one uppercase letter and one special character"
+  },
+  if: -> { password.present? }
+
 
   def self.from_omniauth(auth)
     # 1. Check if user exists by unique UID and Provider
