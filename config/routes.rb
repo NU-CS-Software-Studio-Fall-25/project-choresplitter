@@ -52,6 +52,8 @@ Rails.application.routes.draw do
   end
 
   resource :session, only: [ :new, :create, :destroy ]
+  post "/password", to: "passwords#create", as: :password
+
   resource :password, only: [ :new, :create, :edit, :update ]
 
   resources :users
