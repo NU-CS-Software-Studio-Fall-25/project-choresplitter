@@ -15,6 +15,7 @@
       </div>
     <% end %>
 
+
     <div style="margin-bottom: 20px;">
       <%= form.label :email_address, style: "display: block; margin-bottom: 8px; color: #555; font-weight: 500;" %>
       <%= form.email_field :email_address, required: true,
@@ -23,6 +24,13 @@
 
     <div style="margin-bottom: 20px;">
       <%= form.label :password, style: "display: block; margin-bottom: 8px; color:  #242424ff; font-weight: 500;" %>
+        <div>
+          <ul>
+            <li>Must be at least 8 characters long</li>
+            <li>Must include one uppercase letter</li>
+            <li>Must include one special character</li>
+          </ul>
+        </div>
       <%= form.password_field :password, required: true,
             style: "width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; font-size: 16px;" %>
     </div>
