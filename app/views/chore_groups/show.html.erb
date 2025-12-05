@@ -65,9 +65,9 @@
       current_member ||= @chore_group.members.first
     %>
 
-    <% if @tab == "my_tasks" %>
-      <%= render partial: "task_groups/member_tasks",
-                 locals: { tasks: @my_tasks, pagy: @pagy_my, chore_group: @chore_group } %>
+  <% if @tab == "my_tasks" %>
+    <%= render partial: "task_groups/member_tasks",
+              locals: { my_tasks: @my_tasks, pagy_my: @pagy_my, chore_group: @chore_group } %>
 
     <% elsif @tab == "admin" && @is_admin %>
       <%= render partial: "members/admin_panel",

@@ -4,12 +4,34 @@ class TasksController < ApplicationController
   before_action :set_task, only: [ :update, :destroy, :complete, :reopen ]
 
   def complete
-    @task.complete!
+    Task.transaction do
+      # Only award points if we are actually transitioning to completed
+      unless @task.state == "completed"
+        @task.complete!
+
+        if @task.member && @task.point_value.to_i > 0
+          @task.member.increment!(:points, @task.point_value.to_i)
+        end
+      end
+    end
+
     redirect_back fallback_location: tasks_path, notice: "Task marked as completed."
   end
 
   def reopen
-    @task.reopen!
+    Task.transaction do
+      # Only remove points if we are transitioning from completed -> open
+      if @task.state == "completed"
+        if @task.member && @task.point_value.to_i > 0
+          # Prevent negative points just in case
+          points_to_remove = [@task.point_value.to_i, @task.member.points.to_i].min
+          @task.member.decrement!(:points, points_to_remove)
+        end
+
+        @task.reopen!
+      end
+    end
+
     redirect_back fallback_location: tasks_path, notice: "Task reopened."
   end
 
@@ -34,7 +56,7 @@ class TasksController < ApplicationController
 
       # Only tasks in this group assigned to ME
       @tasks = @chore_group.tasks
-                          .where(state: "open", member_id: current_member&.id)
+                           .where(state: "open", member_id: current_member&.id)
     else
       # All open tasks assigned to me across ALL groups
       @tasks = Task
@@ -47,7 +69,7 @@ class TasksController < ApplicationController
   end
 
   def create
-    attrs = params.fetch(:task, {}).permit(:title, :description, :due_date)
+    attrs = task_params
     attrs[:title] = "New Task" if attrs[:title].blank?
     @task = @task_group.tasks.create(attrs)
 
@@ -74,6 +96,7 @@ class TasksController < ApplicationController
   end
 
   private
+
   def set_chore_group
     @chore_group = ChoreGroup.find_by!(code: params[:chore_group_id])
   end
@@ -87,6 +110,6 @@ class TasksController < ApplicationController
   end
 
   def task_params
-    params.require(:task).permit(:title, :description, :member_id, :due_date)
+    params.require(:task).permit(:title, :description, :member_id, :due_date, :point_value)
   end
 end

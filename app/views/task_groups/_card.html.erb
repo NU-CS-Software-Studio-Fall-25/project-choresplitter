@@ -1,102 +1,211 @@
 <div style="border:1px solid #eee; border-radius:8px; padding:12px; margin-bottom:14px;">
 
-  <h4 style="margin:12px 0 6px;">Tasks (<%= task_group.tasks.size %>)</h4>
+  <h4 style="margin:12px 0 6px;">
+    Tasks (<%= task_group.tasks.size %>)
+  </h4>
 
   <% if @tasks.any? %>
     <!-- Only this region swaps via AJAX -->
     <div id="tg-<%= task_group.id %>-ajax"
          data-page-param="<%= local_assigns[:page_param] || 'page' %>">
-      <ul style="list-style:none; padding:0; margin:0;">
-        <% @tasks.each do |t| %>
-          <li style="padding:8px 0; border-bottom:1px solid #f0f0f0; display:flex; justify-content:space-between; gap:12px;">
-            <div style="min-width:0;">
-              <div style="font-weight:600;"><%= t.title %></div>
-              <% if t.description.present? %>
-                <div style="color:#555; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"><%= t.description %></div>
-              <% end %>
-              <!-- Due Date Pill -->
-              <% if t.due_date.present? %>
-                <div style="margin-top:4px;">
-                  <span style="
-                    display:inline-block;
-                    background-color:#f6c23e;
-                    color:#343434;
-                    padding:0.25rem 0.75rem;
-                    border-radius:999px;
-                    font-size:0.85rem;
-                    font-weight:500;
-                    margin-right:0.5rem;
-                  ">
-                    Due: <%= t.due_date.strftime("%b %d, %Y") %>
-                  </span>
-                  <% if t.overdue? %>
-                    <span style="color:red; font-weight:500;">(Overdue)</span>
-                  <% end %>
+
+      <% in_progress_tasks = @tasks.reject { |t| t.state == "completed" } %>
+      <% completed_tasks   = @tasks.select { |t| t.state == "completed" } %>
+
+      <% if in_progress_tasks.any? %>
+        <h5 style="margin:8px 0 6px;">In Progress</h5>
+        <ul style="list-style:none; padding:0; margin:0;">
+          <% in_progress_tasks.each do |t| %>
+            <li style="padding:8px 0; border-bottom:1px solid #f0f0f0; display:flex; justify-content:space-between; gap:12px;">
+              <div style="min-width:0;">
+                <div style="font-weight:600;"><%= t.title %></div>
+                <% if t.description.present? %>
+                  <div style="color:#555; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"><%= t.description %></div>
+                <% end %>
+
+                <!-- Difficulty pill -->
+                <% if t.respond_to?(:point_value) && t.point_value.present? %>
+                  <% difficulty_label, bg_color, text_color =
+                    case t.point_value
+                    when 5
+                      ['Easy',   '#dcfce7', '#166534']   # green
+                    when 20
+                      ['Hard',   '#fee2e2', '#b91c1c']   # red
+                    else
+                      ['Medium', '#fef9c3', '#92400e']   # yellow
+                    end
+                  %>
+                  <div style="margin-top:4px;">
+                    <span style="
+                      display:inline-block;
+                      background-color:<%= bg_color %>;
+                      color:<%= text_color %>;
+                      padding:0.15rem 0.6rem;
+                      border-radius:999px;
+                      font-size:0.8rem;
+                      font-weight:600;
+                      margin-right:0.5rem;
+                    ">
+                      <%= difficulty_label %> · <%= t.point_value %> pts
+                    </span>
+                  </div>
+                <% end %>
+
+                <!-- Due Date Pill -->
+                <% if t.due_date.present? %>
+                  <div style="margin-top:4px;">
+                    <span style="
+                      display:inline-block;
+                      background-color:#f6c23e;
+                      color:#343434;
+                      padding:0.25rem 0.75rem;
+                      border-radius:999px;
+                      font-size:0.85rem;
+                      font-weight:500;
+                      margin-right:0.5rem;
+                    ">
+                      Due: <%= t.due_date.strftime("%b %d, %Y") %>
+                    </span>
+                    <% if t.overdue? %>
+                      <span style="color:red; font-weight:500;">(Overdue)</span>
+                    <% end %>
+                  </div>
+                <% end %>
+
+                <div style="font-size:12px; color:#777;">
+                  Assigned to: <%= t.member&.try(:name) || t.member&.try(:id) || t.member&.try(:email) || "Unassigned" %>
+                  · <%= t.created_at.strftime("%Y-%m-%d") %>
+                </div>
+              </div>
+
+              <div style="display:flex; align-items:center; gap:8px; flex-shrink:0;">
+                <!-- Assign button -->
+                <button type="button"
+                        onclick="document.getElementById('assign-task-dialog-<%= t.id %>').showModal()"
+                        style="padding:6px 10px; border:1px solid #ddd; border-radius:6px; background:#f5f5f5; font-weight:600;">
+                  Assign
+                </button>
+
+                <!-- Delete (X) -->
+                <%= button_to "×",
+                      polymorphic_path([task_group.chore_group, task_group, t]),
+                      method: :delete,
+                      form: { style: "display:inline;" },
+                      data: { turbo_confirm: "Delete this task?" },
+                      style: "padding:6px 10px; border:1px solid #e57373; border-radius:6px; background:#ffecec; color:#b00020; font-weight:700;" %>
+              </div>
+            </li>
+
+            <!-- Assign dialog (one per in-progress task) -->
+            <dialog id="assign-task-dialog-<%= t.id %>" style="border:none; border-radius:10px; padding:0; box-shadow:0 10px 30px rgba(0,0,0,.2); width:min(520px,90vw); padding: 30px">
+              <%= form_with url: polymorphic_path([task_group.chore_group, task_group, t]),
+                            method: :patch,
+                            style: "padding:20px 24px;" do |f| %>
+                <h3 style="margin:0 0 12px;">Assign Task</h3>
+
+                <label style="display:block; font-weight:600; margin:8px 0 4px;">Member</label>
+                <%= select_tag "task[member_id]",
+                      options_for_select(
+                        [[ "Unassigned", nil ]] +
+                        task_group.chore_group.members.map { |m|
+                          [ (m.respond_to?(:name) ? m.name.presence : nil) || (m.respond_to?(:email) ? m.email : nil) || "Member ##{m.id}", m.id ]
+                        },
+                        selected: t.member_id
+                      ),
+                      include_blank: false,
+                      style: "width:100%; padding:8px; border:1px solid #ddd; border-radius:6px;" %>
+
+                <div style="display:flex; gap:8px; justify-content:flex-end; margin-top:16px;">
+                  <button type="button"
+                          onclick="this.closest('dialog').close()"
+                          style="padding:8px 12px; border:1px solid #ddd; border-radius:6px; background:#fff;">
+                    Cancel
+                  </button>
+                  <button type="submit"
+                          style="padding:8px 12px; border:1px solid #1a73e8; border-radius:6px; background:#1a73e8; color:#fff; font-weight:600;">
+                    Save
+                  </button>
                 </div>
               <% end %>
+            </dialog>
+          <% end %>
+        </ul>
+      <% end %>
 
-              <div style="font-size:12px; color:#777;">
-                Assigned to: <%= t.member&.try(:name) || t.member&.try(:id) || t.member&.try(:email) || "Unassigned" %>
-                · <%= t.created_at.strftime("%Y-%m-%d") %>
+      <% if completed_tasks.any? %>
+        <h5 style="margin:12px 0 6px;">Completed</h5>
+        <ul style="list-style:none; padding:0; margin:0;">
+          <% completed_tasks.each do |t| %>
+            <li style="padding:8px 0; border-bottom:1px solid #f0f0f0; display:flex; justify-content:space-between; gap:12px;">
+              <div style="min-width:0; opacity:0.8;">
+                <div style="font-weight:600; text-decoration:line-through;"><%= t.title %></div>
+                <% if t.description.present? %>
+                  <div style="color:#555; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; text-decoration:line-through;">
+                    <%= t.description %>
+                  </div>
+                <% end %>
+
+                <!-- Difficulty pill -->
+                <% if t.respond_to?(:point_value) && t.point_value.present? %>
+                  <% difficulty_label, bg_color, text_color =
+                    case t.point_value
+                    when 5
+                      ['Easy',   '#dcfce7', '#166534']   # green
+                    when 20
+                      ['Hard',   '#fee2e2', '#b91c1c']   # red
+                    else
+                      ['Medium', '#fef9c3', '#92400e']   # yellow
+                    end
+                  %>
+                  <div style="margin-top:4px;">
+                    <span style="
+                      display:inline-block;
+                      background-color:<%= bg_color %>;
+                      color:<%= text_color %>;
+                      padding:0.15rem 0.6rem;
+                      border-radius:999px;
+                      font-size:0.8rem;
+                      font-weight:600;
+                      margin-right:0.5rem;
+                    ">
+                      <%= difficulty_label %> · <%= t.point_value %> pts
+                    </span>
+                  </div>
+                <% end %>
+
+                <!-- Due Date Pill -->
+                <% if t.due_date.present? %>
+                  <div style="margin-top:4px;">
+                    <span style="
+                      display:inline-block;
+                      background-color:#f6c23e;
+                      color:#343434;
+                      padding:0.25rem 0.75rem;
+                      border-radius:999px;
+                      font-size:0.85rem;
+                      font-weight:500;
+                      margin-right:0.5rem;
+                    ">
+                      Due: <%= t.due_date.strftime("%b %d, %Y") %>
+                    </span>
+                  </div>
+                <% end %>
+
+                <div style="font-size:12px; color:#777;">
+                  Assigned to: <%= t.member&.try(:name) || t.member&.try(:id) || t.member&.try(:email) || "Unassigned" %>
+                  · Completed at: <%= t.completed_at&.strftime("%Y-%m-%d") || "-" %>
+                </div>
               </div>
-            </div>
 
-            <div style="display:flex; align-items:center; gap:8px; flex-shrink:0;">
-              <!-- Assign button -->
-              <button type="button"
-                      onclick="document.getElementById('assign-task-dialog-<%= t.id %>').showModal()"
-                      style="padding:6px 10px; border:1px solid #ddd; border-radius:6px; background:#f5f5f5; font-weight:600;">
-                Assign
-              </button>
-
-              <!-- Delete (X) -->
-              <%= button_to "×",
-                    polymorphic_path([task_group.chore_group, task_group, t]),
-                    method: :delete,
-                    form: { style: "display:inline;" },
-                    data: { turbo_confirm: "Delete this task?" },
-                    style: "padding:6px 10px; border:1px solid #e57373; border-radius:6px; background:#ffecec; color:#b00020; font-weight:700;" %>
-            </div>
-          </li>
-
-          <!-- Assign dialog (one per task) -->
-          <dialog id="assign-task-dialog-<%= t.id %>" style="border:none; border-radius:10px; padding:0; box-shadow:0 10px 30px rgba(0,0,0,.2); width:min(520px,90vw); padding: 30px">
-            <%= form_with url: polymorphic_path([task_group.chore_group, task_group, t]),
-                          method: :patch,
-                          style: "padding:20px 24px;" do |f| %>
-              <h3 style="margin:0 0 12px;">Assign Task</h3>
-
-              <label style="display:block; font-weight:600; margin:8px 0 4px;">Member</label>
-              <%= select_tag "task[member_id]",
-                    options_for_select(
-                      [[ "Unassigned", nil ]] +
-                      task_group.chore_group.members.map { |m|
-                        [ (m.respond_to?(:name) ? m.name.presence : nil) || (m.respond_to?(:email) ? m.email : nil) || "Member ##{m.id}", m.id ]
-                      },
-                      selected: t.member_id
-                    ),
-                    include_blank: false,
-                    style: "width:100%; padding:8px; border:1px solid #ddd; border-radius:6px;" %>
-
-              <div style="display:flex; gap:8px; justify-content:flex-end; margin-top:16px;">
-                <button type="button"
-                        onclick="this.closest('dialog').close()"
-                        style="padding:8px 12px; border:1px solid #ddd; border-radius:6px; background:#fff;">
-                  Cancel
-                </button>
-                <button type="submit"
-                        style="padding:8px 12px; border:1px solid #1a73e8; border-radius:6px; background:#1a73e8; color:#fff; font-weight:600;">
-                  Save
-                </button>
-              </div>
-            <% end %>
-          </dialog>
-        <% end %>
-      </ul>
+              <!-- No assign/delete for completed tasks -->
+            </li>
+          <% end %>
+        </ul>
+      <% end %>
 
       <!-- Pagy nav -->
       <div style="margin-top:10px;">
-        <%=  @pagy.series_nav(:bootstrap).html_safe%>
+        <%= @pagy.series_nav(:bootstrap).html_safe %>
       </div>
     </div>
   <% else %>
@@ -127,6 +236,14 @@
 
     <label style="display:block; font-weight:600; margin:12px 0 4px;">Due Date</label>
     <input type="date" name="task[due_date]" style="width:100%; padding:8px; border:1px solid #ddd; border-radius:6px;">
+
+    <!-- Difficulty selector -->
+    <label style="display:block; font-weight:600; margin:12px 0 4px;">Difficulty</label>
+    <select name="task[point_value]" style="width:100%; padding:8px; border:1px solid #ddd; border-radius:6px;">
+      <option value="5">Easy (5 pts)</option>
+      <option value="10" selected>Medium (10 pts)</option>
+      <option value="20">Hard (20 pts)</option>
+    </select>
 
     <div style="display:flex; gap:8px; justify-content:flex-end; margin-top:16px;">
       <button type="button" onclick="this.closest('dialog').close()"

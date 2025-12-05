@@ -24,7 +24,12 @@ Rails.application.routes.draw do
 
   resources :chore_groups do
     resources :task_groups, only: [ :show ] do
-      resources :tasks
+      resources :tasks do
+        member do
+          patch :complete
+          patch :reopen
+        end
+      end
     end
     resources :bills, only: [ :index, :new, :create ], shallow: true do
       resources :bill_shares, only: [ :create, :update, :destroy ], shallow: true
