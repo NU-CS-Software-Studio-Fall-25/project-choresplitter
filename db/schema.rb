@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_11_29_051244) do
+ActiveRecord::Schema[8.0].define(version: 2025_12_05_183412) do
   create_table "bill_shares", force: :cascade do |t|
     t.integer "bill_id", null: false
     t.integer "member_id", null: false
@@ -60,7 +60,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_29_051244) do
   create_table "members", force: :cascade do |t|
     t.integer "user_id", null: false
     t.string "role"
-    t.integer "points"
+    t.integer "points", default: 0, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.integer "chore_group_id", null: false
@@ -109,6 +109,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_29_051244) do
     t.string "state", default: "open", null: false
     t.datetime "due_date"
     t.datetime "completed_at"
+    t.integer "point_value", default: 10, null: false
     t.index ["member_id"], name: "index_tasks_on_member_id"
     t.index ["task_group_id"], name: "index_tasks_on_task_group_id"
   end

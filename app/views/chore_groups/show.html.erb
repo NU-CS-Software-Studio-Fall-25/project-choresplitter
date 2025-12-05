@@ -34,6 +34,13 @@
           data: { tab: "my_tasks" },
           "aria-current": (@tab=="my_tasks" ? "page" : nil) %>
 
+      <!-- NEW Leaderboard tab -->
+      <%= link_to "Leaderboard",
+          chore_group_path(@chore_group, base_params.merge(tab: "leaderboard", overview_page: 1)),
+          class: "tab-link #{'is-active' if @tab=='leaderboard'}",
+          data: { tab: "leaderboard" },
+          "aria-current": (@tab=="leaderboard" ? "page" : nil) %>
+
       <% if @is_admin %>
         <%= link_to "Admin",
             chore_group_path(@chore_group, base_params.merge(tab: "admin", admin_page: 1)),
@@ -47,13 +54,72 @@
 
   <!-- Only this region swaps via AJAX -->
   <div id="tab-switchable">
+    <%#
+      Compute current_member once so both Overview and Leaderboard can use it
+    %>
+    <%
+      current_member =
+        if defined?(Current) && Current&.user
+          @chore_group.members.find_by(user_id: Current.user.id)
+        end
+      current_member ||= @chore_group.members.first
+    %>
+
     <% if @tab == "my_tasks" %>
       <%= render partial: "task_groups/member_tasks",
                  locals: { tasks: @my_tasks, pagy: @pagy_my, chore_group: @chore_group } %>
+
     <% elsif @tab == "admin" && @is_admin %>
       <%= render partial: "members/admin_panel",
                  locals: { chore_group: @chore_group } %>
+
+    <% elsif @tab == "leaderboard" %>
+      <%# ---------------------- LEADERBOARD TAB ---------------------- %>
+      <h3 style="margin-top:24px;">My Points</h3>
+
+      <div style="border:1px solid #e5e7eb; border-radius:8px; padding:16px; max-width:320px;">
+        <% if current_member %>
+          <div style="font-size:12px; color:#6b7280; text-transform:uppercase; letter-spacing:.04em;">
+            <%= current_member.name.presence || current_member.user&.email_address || "You" %>
+          </div>
+          <div style="font-size:28px; font-weight:700; margin-top:6px;">
+            <%= (current_member.points || 0) %> pts
+          </div>
+        <% else %>
+          <p style="margin:0;">You’re not a member of this group yet.</p>
+        <% end %>
+      </div>
+
+      <h3 style="margin-top:24px;">Leaderboard</h3>
+
+      <div style="border:1px solid #e5e7eb; border-radius:8px; padding:16px;">
+        <% members_by_points = @chore_group.members.includes(:user).order(points: :desc, created_at: :asc) %>
+
+        <% if members_by_points.any? %>
+          <ol style="list-style:none; padding:0; margin:0;">
+            <% members_by_points.each_with_index do |m, idx| %>
+              <% is_you = current_member && m.id == current_member.id %>
+              <li style="display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px solid #f3f4f6;">
+                <div>
+                  <span style="font-weight:600; margin-right:8px;"><%= idx + 1 %>.</span>
+                  <span style="<%= 'font-weight:700;' if is_you %>">
+                    <%= m.name.presence || m.user&.email_address || "Member ##{m.id}" %>
+                    <% if is_you %>
+                      <span style="font-size:12px; color:#6b7280; margin-left:4px;">(you)</span>
+                    <% end %>
+                  </span>
+                </div>
+                <div style="font-weight:700;"><%= (m.points || 0) %> pts</div>
+              </li>
+            <% end %>
+          </ol>
+        <% else %>
+          <p style="margin:0;">No members to show yet.</p>
+        <% end %>
+      </div>
+
     <% else %>
+      <%# ---------------------- OVERVIEW TAB ---------------------- %>
       <% if @chore_group.respond_to?(:users) %>
         <h3 style="margin-top:24px;">Members</h3>
         <% if @chore_group.members.any? %>
@@ -80,11 +146,6 @@
 
       <h3 style="margin-top:24px;">Bills</h3>
       <%
-        current_member =
-          if defined?(Current) && Current&.user
-            @chore_group.members.find_by(user_id: Current.user.id)
-          end
-        current_member ||= @chore_group.members.first
         bills_in_group = @chore_group.bills.includes(:member, bill_shares: :member)
         bills_you_paid = current_member ? bills_in_group.where(member_id: current_member.id) : Bill.none
         your_shares = if current_member
@@ -133,13 +194,13 @@
         </div>
       </div>
 
-    <div style="margin-top:16px; display:flex; gap:12px;">
-      <%= link_to "Show details", chore_group_bills_path(@chore_group, from: "group"),
-            style: "padding:8px 12px; border:1px solid #2563eb; color:#fff; background:#2563eb; border-radius:6px; text-decoration:none; font-weight:600;" %>
+      <div style="margin-top:16px; display:flex; gap:12px;">
+        <%= link_to "Show details", chore_group_bills_path(@chore_group, from: "group"),
+              style: "padding:8px 12px; border:1px solid #2563eb; color:#fff; background:#2563eb; border-radius:6px; text-decoration:none; font-weight:600;" %>
 
-      <%= link_to "Create Bill", new_chore_group_bill_path(@chore_group),
-            style: "padding:8px 12px; border:1px solid #d1d5db; color:#111827; background:#f3f4f6; border-radius:6px; text-decoration:none; font-weight:600;" %>
-    </div>
+        <%= link_to "Create Bill", new_chore_group_bill_path(@chore_group),
+              style: "padding:8px 12px; border:1px solid #d1d5db; color:#111827; background:#f3f4f6; border-radius:6px; text-decoration:none; font-weight:600;" %>
+      </div>
 
       <div style="margin-top:24px;">
         <%= link_to "Back to groups", users_path,

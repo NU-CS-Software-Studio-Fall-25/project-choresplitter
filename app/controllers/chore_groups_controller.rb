@@ -24,7 +24,7 @@ class ChoreGroupsController < ApplicationController
       if requested_tab == "admin"
         @is_admin ? "admin" : "overview"
       else
-        requested_tab.presence_in(%w[overview my_tasks]) || "overview"
+        requested_tab.presence_in(%w[overview my_tasks leaderboard]) || "overview"
       end
 
     # All tasks in this chore group assigned to this member
