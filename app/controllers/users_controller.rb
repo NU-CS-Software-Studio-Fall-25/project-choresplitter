@@ -17,6 +17,9 @@ class UsersController < ApplicationController
 
   def new
     @user = User.new
+    if current_user
+      redirect_to users_path, alert: "You already have an account."
+    end
   end
 
   def create
