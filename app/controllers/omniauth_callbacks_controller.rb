@@ -2,6 +2,8 @@ class OmniauthCallbacksController < ApplicationController
   # Skip authentication checks for the callback
   skip_before_action :require_login, :require_authentication, raise: false
 
+  skip_before_action :verify_authenticity_token, only: :create
+
   def create
     auth = request.env["omniauth.auth"]
     user = User.from_omniauth(auth)
