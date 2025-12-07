@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_12_05_183412) do
+ActiveRecord::Schema[8.0].define(version: 2025_12_07_223535) do
   create_table "bill_shares", force: :cascade do |t|
     t.integer "bill_id", null: false
     t.integer "member_id", null: false
@@ -29,8 +29,10 @@ ActiveRecord::Schema[8.0].define(version: 2025_12_05_183412) do
     t.string "description", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "status", default: "ongoing", null: false
     t.index ["chore_group_id"], name: "index_bills_on_chore_group_id"
     t.index ["member_id"], name: "index_bills_on_member_id"
+    t.index ["status"], name: "index_bills_on_status"
   end
 
   create_table "chore_groups", force: :cascade do |t|
@@ -58,14 +60,16 @@ ActiveRecord::Schema[8.0].define(version: 2025_12_05_183412) do
   end
 
   create_table "members", force: :cascade do |t|
-    t.integer "user_id", null: false
+    t.integer "user_id"
     t.string "role"
     t.integer "points", default: 0, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.integer "chore_group_id", null: false
     t.string "name", limit: 100
+    t.datetime "removed_at"
     t.index ["chore_group_id"], name: "index_members_on_chore_group_id"
+    t.index ["removed_at"], name: "index_members_on_removed_at"
     t.index ["user_id"], name: "index_members_on_user_id"
   end
 

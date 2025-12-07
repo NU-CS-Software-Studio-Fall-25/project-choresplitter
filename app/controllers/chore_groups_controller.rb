@@ -3,15 +3,24 @@ class ChoreGroupsController < ApplicationController
   before_action :set_chore_group, only: [ :show, :edit, :update, :destroy, :leave ]
 
   def index
-    @chore_groups = ChoreGroup.includes(:users).order(created_at: :desc)
+    # Only groups where current_user has an *active* membership (removed_at is nil)
+    scope =
+      ChoreGroup
+        .joins(:members)
+        .where(members: { user_id: current_user.id, removed_at: nil })
+        .includes(:members)
+        .order(created_at: :desc)
+
+    # Paginate for the "My Chore Groups" view
+    @pagy, @chore_groups = pagy(scope, items: 10, page_param: :groups_page)
   end
 
   def show
-    # Must be a member to view this group
-    @current_member = @chore_group.members.find_by(user_id: current_user.id)
+    # Must be an *active* member to view this group
+    @current_member = @chore_group.active_members.find_by(user_id: current_user.id)
 
     unless @current_member
-      redirect_to chore_groups_path, alert: "You must be a member of this group to view it."
+      redirect_to chore_groups_path, alert: "You are no longer a member of this group."
       return
     end
 
@@ -137,23 +146,52 @@ class ChoreGroupsController < ApplicationController
     member_name = params[:member_name].presence
     membership  = group.members.find_by(user: current_user)
 
-    if membership
+    if membership&.removed_at.present?
+      # User was previously kicked/removed — keep old membership for history,
+      # but detach it from the user and create a brand-new membership row.
+      Member.transaction do
+        # 1. Detach old membership from the user (so it only represents past debts/tasks)
+        membership.update!(user_id: nil)
+
+        # 2. Create a fresh membership for this user
+        new_membership = group.members.create!(
+          user:   current_user,
+          role:   "member",
+          points: 0,
+          name:   member_name.presence || membership.name
+        )
+
+        # You could also auto-join them to tasks here if you ever want that behavior.
+      end
+
+      redirect_to group, notice: "You rejoined #{group.name} with a fresh membership!"
+    elsif membership
+      # Existing active membership – just update name if provided
       membership.update(name: member_name) if member_name
       redirect_to group, notice: "You are already a member."
     else
-      membership = group.members.build(user: current_user, role: "member", points: 0, name: member_name)
+      # First time joining this group
+      membership = group.members.build(
+        user:   current_user,
+        role:   "member",
+        points: 0,
+        name:   member_name
+      )
+
       if membership.save
         redirect_to group, notice: "You joined #{group.name}!"
       else
-        redirect_to join_chore_groups_path, alert: "Unable to join: #{membership.errors.full_messages.to_sentence}"
+        redirect_to join_chore_groups_path,
+                    alert: "Unable to join: #{membership.errors.full_messages.to_sentence}"
       end
     end
   end
 
+
   # Member route: POST/DELETE /chore_groups/:id/leave (id is CODE)
   def leave
     # group already loaded by code
-    membership = @chore_group.members.find_by(user: current_user)
+    membership = @chore_group.active_members.find_by(user: current_user)
 
     if membership.nil?
       redirect_to @chore_group, alert: "You are not a member of this group."
@@ -165,11 +203,19 @@ class ChoreGroupsController < ApplicationController
       return
     end
 
-    if membership.destroy
-      redirect_to chore_groups_path, notice: "You have successfully left '#{@chore_group.name}'."
-    else
-      redirect_to @chore_group, alert: "An error occurred while trying to leave the group."
+    Member.transaction do
+      # Unassign all tasks in this chore group that are assigned to this member
+      Task.joins(:task_group)
+          .where(task_groups: { chore_group_id: @chore_group.id }, member_id: membership.id)
+          .update_all(member_id: nil)
+
+      # Soft delete membership
+      membership.update!(removed_at: Time.current)
     end
+
+    redirect_to chore_groups_path, notice: "You have successfully left '#{@chore_group.name}'."
+  rescue ActiveRecord::RecordInvalid => e
+    redirect_to @chore_group, alert: "An error occurred while trying to leave the group: #{e.message}"
   end
 
   def destroy

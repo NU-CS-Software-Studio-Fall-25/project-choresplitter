@@ -1,10 +1,17 @@
 class Member < ApplicationRecord
-  belongs_to :user
+  belongs_to :user, optional: true
   belongs_to :chore_group
   has_many :tasks, dependent: :nullify
 
   validates :role, presence: true
   validates :user_id, uniqueness: { scope: :chore_group_id }
+
+  scope :active,  -> { where(removed_at: nil) }
+  scope :removed, -> { where.not(removed_at: nil) }
+
+  def kicked?
+    removed_at.present?
+  end
 
   def net_balance_with(other_member)
     others_debt = BillShare.joins(:bill)

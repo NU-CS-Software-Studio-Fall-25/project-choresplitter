@@ -34,7 +34,7 @@
           data: { tab: "my_tasks" },
           "aria-current": (@tab=="my_tasks" ? "page" : nil) %>
 
-      <!-- NEW Leaderboard tab -->
+      <!-- Leaderboard tab -->
       <%= link_to "Leaderboard",
           chore_group_path(@chore_group, base_params.merge(tab: "leaderboard", overview_page: 1)),
           class: "tab-link #{'is-active' if @tab=='leaderboard'}",
@@ -55,19 +55,24 @@
   <!-- Only this region swaps via AJAX -->
   <div id="tab-switchable">
     <%#
-      Compute current_member once so both Overview and Leaderboard can use it
+      Compute current_member once so both Overview and Leaderboard can use it.
+      Use ONLY active_members so removed (soft-deleted) members disappear.
     %>
     <%
       current_member =
-        if defined?(Current) && Current&.user
-          @chore_group.members.find_by(user_id: Current.user.id)
+        if defined?(@current_member) && @current_member.present?
+          @current_member
+        elsif defined?(Current) && Current&.user
+          @chore_group.active_members.find_by(user_id: Current.user.id)
+        else
+          nil
         end
-      current_member ||= @chore_group.members.first
+      current_member ||= @chore_group.active_members.first
     %>
 
-  <% if @tab == "my_tasks" %>
-    <%= render partial: "task_groups/member_tasks",
-              locals: { my_tasks: @my_tasks, pagy_my: @pagy_my, chore_group: @chore_group } %>
+    <% if @tab == "my_tasks" %>
+      <%= render partial: "task_groups/member_tasks",
+                locals: { my_tasks: @my_tasks, pagy_my: @pagy_my, chore_group: @chore_group } %>
 
     <% elsif @tab == "admin" && @is_admin %>
       <%= render partial: "members/admin_panel",
@@ -93,7 +98,7 @@
       <h3 style="margin-top:24px;">Leaderboard</h3>
 
       <div style="border:1px solid #e5e7eb; border-radius:8px; padding:16px;">
-        <% members_by_points = @chore_group.members.includes(:user).order(points: :desc, created_at: :asc) %>
+        <% members_by_points = @chore_group.active_members.includes(:user).order(points: :desc, created_at: :asc) %>
 
         <% if members_by_points.any? %>
           <ol style="list-style:none; padding:0; margin:0;">
@@ -122,9 +127,9 @@
       <%# ---------------------- OVERVIEW TAB ---------------------- %>
       <% if @chore_group.respond_to?(:users) %>
         <h3 style="margin-top:24px;">Members</h3>
-        <% if @chore_group.members.any? %>
+        <% if @chore_group.active_members.any? %>
           <ul>
-            <% @chore_group.members.each do |m| %>
+            <% @chore_group.active_members.each do |m| %>
               <li><%= m.name.presence || m.user&.email_address || "Member ##{m.id}" %></li>
             <% end %>
           </ul>
@@ -213,7 +218,7 @@
 <script>
 (function(){
   const root  = document.getElementById('tab-switchable');
-  const links = Array.from(document.querySelectorAll('a.tab-link')); // <-- define links
+  const links = Array.from(document.querySelectorAll('a.tab-link'));
   if (!root || !links.length) return;
 
   function setActive(tab){
@@ -246,14 +251,13 @@
     if (!a) return;
     e.preventDefault();
     const url = new URL(a.href, location.origin);
-    // reset stale page params and force page 1 for the chosen tab
     url.searchParams.delete('page');
     url.searchParams.delete('overview_page');
     url.searchParams.delete('my_tasks_page');
     const tab = a.dataset.tab || 'overview';
     url.searchParams.set(tab === 'my_tasks' ? 'my_tasks_page' : 'overview_page', '1');
 
-    setActive(tab);                // <-- update highlight immediately
+    setActive(tab);
     swapFrom(url.toString(), true);
   });
 
@@ -262,14 +266,14 @@
     const a = e.target.closest('a[href*="my_tasks_page="]');
     if (!a) return;
     e.preventDefault();
-    setActive('my_tasks');         // <-- keep highlight on my_tasks
+    setActive('my_tasks');
     swapFrom(a.href, true);
   });
 
   // Back/forward support
   window.addEventListener('popstate', function(){
     const params = new URL(location.href).searchParams;
-    const tab = params.get('tab') || 'overview';  // <-- define tab
+    const tab = params.get('tab') || 'overview';
     setActive(tab);
     swapFrom(location.href, false);
   });
@@ -277,7 +281,6 @@
 </script>
 
 <style>
-/* Minimal styles so .is-active shows visually */
 a.tab-link{
   padding:8px 12px; border:1px solid #ddd; border-radius:6px;
   background:#f5f5f5; font-weight:600; text-decoration:none; color:#1e1e1e;

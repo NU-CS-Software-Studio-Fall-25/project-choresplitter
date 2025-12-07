@@ -6,13 +6,29 @@ class UsersController < ApplicationController
   before_action :ensure_self_or_admin, only: [ :show, :edit, :update, :destroy ]
 
   def index
-    # Consider restricting to admins if you don’t want a public user list:
+    # Optional: global user list (you can lock this down to admins later if you want)
     @users = User.order(created_at: :desc)
-    @pagy, @chore_groups = pagy(:offset, current_user.chore_groups, limit: 5)
+
+    # Only chore groups where the *current_user* is an active member (removed_at is nil)
+    active_groups =
+      ChoreGroup
+        .joins(:members)
+        .where(members: { user_id: current_user.id, removed_at: nil })
+        .distinct
+        .order(created_at: :desc)
+
+    @pagy, @chore_groups = pagy(:offset, active_groups, limit: 5)
   end
 
   def show
-    # Only the groups THIS user belongs to
+    # Only the groups THIS user belongs to (you can mirror the same logic here if you want):
+    # active_groups =
+    #   ChoreGroup
+    #     .joins(:members)
+    #     .where(members: { user_id: @user.id, removed_at: nil })
+    #     .distinct
+    #     .order(created_at: :desc)
+    # @pagy, @chore_groups = pagy(:offset, active_groups, limit: 5)
   end
 
   def new
@@ -54,10 +70,6 @@ class UsersController < ApplicationController
   end
 
   private
-
-  # def require_login
-  #   redirect_to new_session_path, alert: "Please sign in first." unless user_signed_in?
-  # end
 
   def ensure_self_or_admin
     # adjust the admin check to your app (e.g., current_user.admin?)
