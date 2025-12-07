@@ -6,29 +6,12 @@ class UsersController < ApplicationController
   before_action :ensure_self_or_admin, only: [ :show, :edit, :update, :destroy ]
 
   def index
-    # Optional: global user list (you can lock this down to admins later if you want)
     @users = User.order(created_at: :desc)
-
-    # Only chore groups where the *current_user* is an active member (removed_at is nil)
-    active_groups =
-      ChoreGroup
-        .joins(:members)
-        .where(members: { user_id: current_user.id, removed_at: nil })
-        .distinct
-        .order(created_at: :desc)
-
-    @pagy, @chore_groups = pagy(:offset, active_groups, limit: 5)
+    @pagy, @chore_groups = pagy(:offset, current_user.chore_groups, limit: 5)
   end
 
   def show
-    # Only the groups THIS user belongs to (you can mirror the same logic here if you want):
-    # active_groups =
-    #   ChoreGroup
-    #     .joins(:members)
-    #     .where(members: { user_id: @user.id, removed_at: nil })
-    #     .distinct
-    #     .order(created_at: :desc)
-    # @pagy, @chore_groups = pagy(:offset, active_groups, limit: 5)
+    # Only the groups THIS user belongs to
   end
 
   def new
@@ -40,22 +23,39 @@ class UsersController < ApplicationController
 
   def create
     @user = User.new(user_params)
-    if @user.save
-      # Send the verification email
-      UserMailer.verification(@user).deliver_later
 
-      # Redirect to the sign-in page with a notice
+    # Normalize email for comparison (in case-insensitive way)
+    email = @user.email_address.to_s.strip.downcase
+
+    if User.where("LOWER(email_address) = ?", email).exists?
+      # Don’t even try to save; show nice error instead of 500
+      @user.errors.add(:email_address, "has already been taken")
+      flash.now[:alert] = "That email is already in use. Please sign in or use a different email."
+      return render :new, status: :unprocessable_entity
+    end
+
+    # Try to save normally, but still guard against DB race (RecordNotUnique)
+    if @user.save
+      UserMailer.verification(@user).deliver_later
       redirect_to new_session_path, notice: "User created. Please check your email to verify your account."
     else
+      flash.now[:alert] ||= @user.errors.full_messages.to_sentence
       render :new, status: :unprocessable_entity
     end
+  rescue ActiveRecord::RecordNotUnique
+    # Fallback in case two signups race or validation missed something
+    @user.errors.add(:email_address, "has already been taken")
+    flash.now[:alert] = "That email is already in use. Please sign in or use a different email."
+    render :new, status: :unprocessable_entity
   end
 
   def edit; end
 
   def update
     attrs = user_params
-    attrs = attrs.except(:password, :password_confirmation) if attrs[:password].blank? && attrs[:password_confirmation].blank?
+    if attrs[:password].blank? && attrs[:password_confirmation].blank?
+      attrs = attrs.except(:password, :password_confirmation)
+    end
 
     if @user.update(attrs)
       redirect_to @user, notice: "User updated."
@@ -72,7 +72,6 @@ class UsersController < ApplicationController
   private
 
   def ensure_self_or_admin
-    # adjust the admin check to your app (e.g., current_user.admin?)
     redirect_to root_path, alert: "Not authorized." unless current_user == @user
   end
 
