@@ -1,14 +1,75 @@
 <div style="margin-top:8px;">
   <h4 style="margin:0 0 12px;">My Tasks</h4>
 
-  <% if @my_tasks.present? %>
+  <% if my_tasks.present? %>
     <ul style="list-style:none; padding:0; margin:0; display:flex; flex-direction:column; gap:10px;">
-      <% @my_tasks.each do |t| %>
+      <% my_tasks.each do |t| %>
         <li style="border:1px solid #eee; border-radius:8px; padding:10px; display:flex; justify-content:space-between; gap:12px;">
           <div style="min-width:0;">
             <div style="font-weight:700;"><%= t.title %></div>
             <% if t.description.present? %>
               <div style="color:#555; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"><%= t.description %></div>
+            <% end %>
+
+            <!-- Difficulty / points pill -->
+            <% if t.respond_to?(:point_value) && t.point_value.present? %>
+              <% difficulty_label, bg_color, text_color =
+                case t.point_value
+                when 5
+                  ['Easy',   '#dcfce7', '#166534']   # green
+                when 20
+                  ['Hard',   '#fee2e2', '#b91c1c']   # red
+                else
+                  ['Medium', '#fef9c3', '#92400e']   # yellow
+                end
+              %>
+              <div style="margin-top:4px;">
+                <span style="
+                  display:inline-block;
+                  background-color:<%= bg_color %>;
+                  color:<%= text_color %>;
+                  padding:0.15rem 0.6rem;
+                  border-radius:999px;
+                  font-size:0.8rem;
+                  font-weight:600;
+                  margin-right:0.5rem;
+                ">
+                  <%= difficulty_label %> · <%= t.point_value %> pts
+                </span>
+              </div>
+            <% end %>
+          </div>
+
+          <!-- Toggle complete / reopen -->
+          <div style="display:flex; align-items:center; flex-shrink:0;">
+            <% done = (t.state == 'completed') %>
+
+            <% if done %>
+              <%= button_to "Reopen",
+                    reopen_chore_group_task_group_task_path(
+                      t.task_group.chore_group,
+                      t.task_group,
+                      t
+                    ),
+                    method: :patch,
+                    form: { style: "display:inline;" },
+                    style: "padding:6px 10px; border-radius:6px; font-weight:600;
+                            border:1px solid #9ca3af;
+                            background:#f3f4f6;
+                            color:#374151;" %>
+            <% else %>
+              <%= button_to "Mark complete",
+                    complete_chore_group_task_group_task_path(
+                      t.task_group.chore_group,
+                      t.task_group,
+                      t
+                    ),
+                    method: :patch,
+                    form: { style: "display:inline;" },
+                    style: "padding:6px 10px; border-radius:6px; font-weight:600;
+                            border:1px solid #16a34a;
+                            background:#dcfce7;
+                            color:#166534;" %>
             <% end %>
           </div>
         </li>
@@ -16,8 +77,7 @@
     </ul>
 
     <div style="margin-top:12px;">
-      <%# Use whatever Pagy helper you enabled %>
-      <%=  @pagy_my.series_nav(:bootstrap).html_safe%>
+      <%= pagy_my.series_nav(:bootstrap).html_safe %>
     </div>
   <% else %>
     <p style="color:#666;">You have no tasks assigned in this group.</p>
