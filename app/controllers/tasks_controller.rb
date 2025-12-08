@@ -24,7 +24,7 @@ class TasksController < ApplicationController
       if @task.state == "completed"
         if @task.member && @task.point_value.to_i > 0
           # Prevent negative points just in case
-          points_to_remove = [@task.point_value.to_i, @task.member.points.to_i].min
+          points_to_remove = [ @task.point_value.to_i, @task.member.points.to_i ].min
           @task.member.decrement!(:points, points_to_remove)
         end
 
