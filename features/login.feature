@@ -1,14 +1,14 @@
 Feature: Login
-    As a user
-    I want to login to access the app
-    So I can check my tasks and groups
+  As a user
+  I want to login to access the app
+  So I can check my tasks and groups
 
-Background:
+  Background:
     Given I am a registered user
-    I am logged out
+    And I am logged out
 
-Scenario: Logging in
-    I go to the login page
-    I type in my username and password
-    I click the login button
-    I should see the my dashboard with my task groups showing
+  Scenario: Logging in
+    When I go to the login page
+    And I type in my username and password
+    And I click the login button
+    Then I should see my dashboard with my task groups showing
