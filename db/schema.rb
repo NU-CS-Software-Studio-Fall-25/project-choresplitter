@@ -29,10 +29,8 @@ ActiveRecord::Schema[8.0].define(version: 2025_12_07_223535) do
     t.string "description", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.string "status", default: "ongoing", null: false
     t.index ["chore_group_id"], name: "index_bills_on_chore_group_id"
     t.index ["member_id"], name: "index_bills_on_member_id"
-    t.index ["status"], name: "index_bills_on_status"
   end
 
   create_table "chore_groups", force: :cascade do |t|
